@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
 )
 
 // HandleLeaderboard returns current standings
@@ -29,15 +28,9 @@ func (h *Handler) HandleUserStats(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	userIdQuery := request.URL.Query().Get("user_id")
-	if userIdQuery == "" {
+	userId := request.URL.Query().Get("user_id")
+	if userId == "" {
 		h.respondError(writer, http.StatusBadRequest, "Missing user_id parameter")
-		return
-	}
-
-	userId, err := strconv.Atoi(userIdQuery)
-	if err != nil {
-		h.respondError(writer, http.StatusBadRequest, "Invalid user_id parameter")
 		return
 	}
 

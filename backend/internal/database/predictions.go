@@ -32,12 +32,12 @@ func (db *DB) CreatePrediction(ctx context.Context, prediction *models.Predictio
 }
 
 // GetUserPredictions retrieves all predictions for a user
-func (db *DB) GetUserPredictions(ctx context.Context, userID int) ([]models.Prediction, error) {
+func (db *DB) GetUserPredictions(ctx context.Context, userID string) ([]models.Prediction, error) {
 	input := &dynamodb.QueryInput{
 		TableName:              aws.String(db.predictionsTable),
 		KeyConditionExpression: aws.String("userId = :userId"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":userId": &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", userID)},
+			":userId": &types.AttributeValueMemberN{Value: fmt.Sprintf("%s", userID)},
 		},
 	}
 
@@ -59,11 +59,11 @@ func (db *DB) GetUserPredictions(ctx context.Context, userID int) ([]models.Pred
 }
 
 // GetPrediction retrieves a specific prediction
-func (db *DB) GetPrediction(ctx context.Context, userID int, gameID string) (*models.Prediction, error) {
+func (db *DB) GetPrediction(ctx context.Context, userID string, gameID string) (*models.Prediction, error) {
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(db.predictionsTable),
 		Key: map[string]types.AttributeValue{
-			"userId": &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", userID)},
+			"userId": &types.AttributeValueMemberS{Value: userID},
 			"gameId": &types.AttributeValueMemberS{Value: gameID},
 		},
 	}
@@ -87,11 +87,11 @@ func (db *DB) GetPrediction(ctx context.Context, userID int, gameID string) (*mo
 }
 
 // UpdatePredictionStatus updates the status of a prediction after game completion
-func (db *DB) UpdatePredictionStatus(ctx context.Context, userID int, gameID, status, actualWinner string) error {
+func (db *DB) UpdatePredictionStatus(ctx context.Context, userID string, gameID, status, actualWinner string) error {
 	input := &dynamodb.UpdateItemInput{
 		TableName: aws.String(db.predictionsTable),
 		Key: map[string]types.AttributeValue{
-			"userId": &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", userID)},
+			"userId": &types.AttributeValueMemberS{Value: userID},
 			"gameId": &types.AttributeValueMemberS{Value: gameID},
 		},
 		UpdateExpression: aws.String("SET #status = :status, actualWinner = :actualWinner"),

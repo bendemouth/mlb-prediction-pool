@@ -22,10 +22,10 @@ func (s *PredictionService) MakePrediction(request models.SubmitPredictionReques
 	return nil
 }
 
-func (s *PredictionService) GetUserPredictions(userId int) ([]models.Prediction, error) {
+func (s *PredictionService) GetUserPredictions(userId string) ([]models.Prediction, error) {
 	return []models.Prediction{
-		{Id: 1, UserId: 5, GameId: "TestGame1", HomeScorePredicted: 4, AwayScorePredicted: 2, TotalScorePredicted: 6, Confidence: 0.7, PredictedWinnerId: 1, ActualWinnerId: 1, WinnerCorrect: true, HomeScoreError: 1, AwayScoreError: 1, TotalScoreError: 1},
-		{Id: 2, UserId: 5, GameId: "TestGame2", HomeScorePredicted: 3, AwayScorePredicted: 5, TotalScorePredicted: 8, Confidence: 0.6, PredictedWinnerId: 2, ActualWinnerId: 1, WinnerCorrect: false, HomeScoreError: 2, AwayScoreError: 0, TotalScoreError: 2},
+		{UserId: "1", GameId: "game1", PredictedWinnerId: "teamA", HomeScorePredicted: 5, AwayScorePredicted: 3, TotalScorePredicted: 8},
+		{UserId: "1", GameId: "game2", PredictedWinnerId: "teamB", HomeScorePredicted: 2, AwayScorePredicted: 4, TotalScorePredicted: 6},
 	}, nil
 }
 
@@ -33,10 +33,10 @@ func (s *PredictionService) CreatePrediction(writer http.ResponseWriter, request
 	return models.Prediction{}, nil
 }
 
-func (s *PredictionService) SubmitPrediction(ctx context.Context, userId int, httprequest http.Request) (models.Prediction, error) {
+func (s *PredictionService) SubmitPrediction(ctx context.Context, userId string, httprequest http.Request) (models.Prediction, error) {
 	return models.Prediction{}, nil
 }
 
-func (s *PredictionService) SubmitBulkPredictions(ctx context.Context, userId int, requests []models.SubmitPredictionRequest) ([]models.Prediction, error) {
+func (s *PredictionService) SubmitBulkPredictions(ctx context.Context, userId string, requests []models.SubmitPredictionRequest) ([]models.Prediction, error) {
 	return []models.Prediction{}, nil
 }

@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/bendemouth/mlb-prediction-pool/internal/models"
 )
@@ -22,15 +21,9 @@ func (h *Handler) HandlePredictions(writer http.ResponseWriter, request *http.Re
 // Handle GET /predictions
 // Eg: /predictions?userId=123
 func (h *Handler) getPredictions(writer http.ResponseWriter, request *http.Request) {
-	userIdQuery := request.URL.Query().Get("userId")
-	if userIdQuery == "" {
+	userId := request.URL.Query().Get("userId")
+	if userId == "" {
 		h.respondError(writer, http.StatusBadRequest, "User id is required")
-		return
-	}
-
-	userId, err := strconv.Atoi(userIdQuery)
-	if err != nil {
-		h.respondError(writer, http.StatusBadRequest, "Invalid user id")
 		return
 	}
 
@@ -60,13 +53,7 @@ func (h *Handler) submitPredictions(writer http.ResponseWriter, request *http.Re
 	// TODO: JWT Token?
 	userId := request.Header.Get("X-User-Id")
 
-	userIdInt, err := strconv.Atoi(userId)
-	if err != nil {
-		h.respondError(writer, http.StatusBadRequest, "Invalid user id")
-		return
-	}
-
-	prediction, err := h.predictionService.SubmitPrediction(request.Context(), userIdInt, *request)
+	prediction, err := h.predictionService.SubmitPrediction(request.Context(), userId, *request)
 	if err != nil {
 		h.respondError(writer, http.StatusInternalServerError, fmt.Sprint("Failed to submit prediction: ", err))
 		return
@@ -95,13 +82,7 @@ func (h *Handler) HandleBulkPredictions(writer http.ResponseWriter, request *htt
 
 	userId := request.Header.Get("X-User-Id")
 
-	userIdInt, err := strconv.Atoi(userId)
-	if err != nil {
-		h.respondError(writer, http.StatusBadRequest, "Invalid user id")
-		return
-	}
-
-	results, err := h.predictionService.SubmitBulkPredictions(request.Context(), userIdInt, req.Predictions)
+	results, err := h.predictionService.SubmitBulkPredictions(request.Context(), userId, req.Predictions)
 	if err != nil {
 		h.respondError(writer, http.StatusInternalServerError, fmt.Sprint("Failed to submit bulk predictions: ", err))
 		return
