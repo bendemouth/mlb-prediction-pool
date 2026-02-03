@@ -14,7 +14,6 @@ type DB struct {
 	client           *dynamodb.Client
 	usersTable       string
 	predictionsTable string
-	leaderboardTable string
 	gamesTable       string
 	modelsTable      string
 }
@@ -24,7 +23,6 @@ type DBConfig struct {
 	Endpoint         string
 	UsersTable       string
 	PredictionsTable string
-	LeaderboardTable string
 	GamesTable       string
 	ModelsTable      string
 }
@@ -40,19 +38,18 @@ func NewDB(ctx context.Context, cfg DBConfig) (*DB, error) {
 	// Create DynamoDB client
 	var client *dynamodb.Client
 	if cfg.Endpoint != "" {
-		// Use local DynamoDB (for development)
+		// Use local DynamoDB for development
 		client = dynamodb.NewFromConfig(awsCfg, func(o *dynamodb.Options) {
 			o.BaseEndpoint = aws.String(cfg.Endpoint)
 		})
 	} else {
-		client = dynamodb.New(dynamodb.Options{Credentials: awsCfg.Credentials, Region: awsCfg.Region})
+		client = dynamodb.NewFromConfig(awsCfg)
 	}
 
 	db := &DB{
 		client:           client,
 		usersTable:       cfg.UsersTable,
 		predictionsTable: cfg.PredictionsTable,
-		leaderboardTable: cfg.LeaderboardTable,
 		gamesTable:       cfg.GamesTable,
 		modelsTable:      cfg.ModelsTable,
 	}
@@ -63,10 +60,9 @@ func NewDB(ctx context.Context, cfg DBConfig) (*DB, error) {
 func NewDBFromEnv(ctx context.Context) (*DB, error) {
 	cfg := DBConfig{
 		Region:           getEnv("DYNAMODB_REGION", "us-west-2"),
-		Endpoint:         os.Getenv("DYNAMODB_ENDPOINT"), // Optional
+		Endpoint:         os.Getenv("DYNAMODB_ENDPOINT"), // Optional for local dev
 		UsersTable:       getEnv("DYNAMODB_USERS_TABLE", "mlb-prediction-pool-users"),
 		PredictionsTable: getEnv("DYNAMODB_PREDICTIONS_TABLE", "mlb-prediction-pool-predictions"),
-		LeaderboardTable: getEnv("DYNAMODB_LEADERBOARD_TABLE", "mlb-prediction-pool-leaderboard"),
 		GamesTable:       getEnv("DYNAMODB_GAMES_TABLE", "mlb-prediction-pool-games"),
 		ModelsTable:      getEnv("DYNAMODB_MODELS_TABLE", "mlb-prediction-pool-models"),
 	}
@@ -84,4 +80,11 @@ func getEnv(key, defaultValue string) string {
 func (db *DB) Close() error {
 	// DynamoDB client does not require explicit closure
 	return nil
+}
+
+func (db *DB) HealthCheck(ctx context.Context) error {
+	_, err := db.client.ListTables(ctx, &dynamodb.ListTablesInput{
+		Limit: aws.Int32(1),
+	})
+	return err
 }

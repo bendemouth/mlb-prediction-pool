@@ -3,18 +3,19 @@ module github.com/bendemouth/mlb-prediction-pool
 go 1.25.5
 
 require (
-	github.com/99designs/gqlgen v0.17.86 // indirect
-	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.41.1 // direct
 	github.com/aws/aws-sdk-go-v2/config v1.32.7 // direct
-	github.com/aws/aws-sdk-go-v2/credentials v1.19.7 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.20.31 // direct
-	github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.8.31 // indirect
+	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.54.0 // direct
+	github.com/joho/godotenv v1.5.1
+)
+
+require (
+	github.com/aws/aws-sdk-go-v2/credentials v1.19.7 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.17 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.17 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.17 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.4 // indirect
-	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.54.0 // direct
 	github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.32.10 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.11.17 // indirect
@@ -24,10 +25,4 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.13 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.6 // indirect
 	github.com/aws/smithy-go v1.24.0 // indirect
-	github.com/goccy/go-yaml v1.19.2 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
-	github.com/vektah/gqlparser/v2 v2.5.31 // indirect
-	golang.org/x/mod v0.31.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/tools v0.40.0 // indirect
 )

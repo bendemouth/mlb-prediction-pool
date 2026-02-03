@@ -27,7 +27,7 @@ func main() {
 	}
 	defer db.Close()
 
-	log.Println("✅ Database connection established")
+	log.Println("Database connection established")
 
 	// Create handlers
 	h := handlers.NewHandler(db)
@@ -35,7 +35,7 @@ func main() {
 	// Setup routes
 	mux := http.NewServeMux()
 
-	//mux.HandleFunc("/health", h.HandleHealth)
+	mux.HandleFunc("/health", h.HandleHealthCheck)
 	mux.HandleFunc("/api/predictions", h.HandlePredictions)
 	mux.HandleFunc("/api/predictions/bulk", h.HandleBulkPredictions)
 	mux.HandleFunc("/api/leaderboard", h.HandleLeaderboard)

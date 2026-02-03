@@ -22,7 +22,7 @@ func NewHandler(db *database.DB) *Handler {
 		db:                 db,
 		predictionService:  services.NewPredictionService(db),
 		leaderboardService: services.NewLeaderboardService(db),
-		healthcheckService: services.NewHealthcheckService(),
+		healthcheckService: services.NewHealthcheckService(db),
 	}
 }
 
