@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -13,17 +14,19 @@ import (
 
 // CreatePrediction stores a new prediction
 func (db *DB) CreatePrediction(ctx context.Context, prediction *models.Prediction) error {
+	prediction.SubmittedAt = time.Now()
+
 	item, err := attributevalue.MarshalMap(prediction)
 	if err != nil {
 		return fmt.Errorf("failed to marshal prediction: %w", err)
 	}
 
-	input := &dynamodb.PutItemInput{
+	input := dynamodb.PutItemInput{
 		TableName: aws.String(db.predictionsTable),
 		Item:      item,
 	}
 
-	_, err = db.client.PutItem(ctx, input)
+	_, err = db.client.PutItem(ctx, &input)
 	if err != nil {
 		return fmt.Errorf("failed to create prediction: %w", err)
 	}
@@ -32,12 +35,12 @@ func (db *DB) CreatePrediction(ctx context.Context, prediction *models.Predictio
 }
 
 // GetUserPredictions retrieves all predictions for a user
-func (db *DB) GetUserPredictions(ctx context.Context, userID string) ([]models.Prediction, error) {
+func (db *DB) GetUserPredictions(ctx context.Context, userId string) ([]models.Prediction, error) {
 	input := &dynamodb.QueryInput{
 		TableName:              aws.String(db.predictionsTable),
 		KeyConditionExpression: aws.String("userId = :userId"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":userId": &types.AttributeValueMemberN{Value: fmt.Sprintf("%s", userID)},
+			":userId": &types.AttributeValueMemberS{Value: userId},
 		},
 	}
 
@@ -47,6 +50,7 @@ func (db *DB) GetUserPredictions(ctx context.Context, userID string) ([]models.P
 	}
 
 	predictions := make([]models.Prediction, 0, len(result.Items))
+
 	for _, item := range result.Items {
 		var prediction models.Prediction
 		if err := attributevalue.UnmarshalMap(item, &prediction); err != nil {
@@ -58,13 +62,13 @@ func (db *DB) GetUserPredictions(ctx context.Context, userID string) ([]models.P
 	return predictions, nil
 }
 
-// GetPrediction retrieves a specific prediction
-func (db *DB) GetPrediction(ctx context.Context, userID string, gameID string) (*models.Prediction, error) {
+// GetPrediction retrieves a specific prediction by userId and gameId
+func (db *DB) GetPrediction(ctx context.Context, userId, gameId string) (*models.Prediction, error) {
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(db.predictionsTable),
 		Key: map[string]types.AttributeValue{
-			"userId": &types.AttributeValueMemberS{Value: userID},
-			"gameId": &types.AttributeValueMemberS{Value: gameID},
+			"userId": &types.AttributeValueMemberS{Value: userId},
+			"gameId": &types.AttributeValueMemberS{Value: gameId},
 		},
 	}
 
@@ -74,54 +78,25 @@ func (db *DB) GetPrediction(ctx context.Context, userID string, gameID string) (
 	}
 
 	if result.Item == nil {
-		return nil, fmt.Errorf("prediction not found")
+		return nil, nil // Prediction not found
 	}
 
 	var prediction models.Prediction
-	err = attributevalue.UnmarshalMap(result.Item, &prediction)
-	if err != nil {
+	if err := attributevalue.UnmarshalMap(result.Item, &prediction); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal prediction: %w", err)
 	}
 
 	return &prediction, nil
 }
 
-// UpdatePredictionStatus updates the status of a prediction after game completion
-func (db *DB) UpdatePredictionStatus(ctx context.Context, userID string, gameID, status, actualWinner string) error {
-	input := &dynamodb.UpdateItemInput{
-		TableName: aws.String(db.predictionsTable),
-		Key: map[string]types.AttributeValue{
-			"userId": &types.AttributeValueMemberS{Value: userID},
-			"gameId": &types.AttributeValueMemberS{Value: gameID},
-		},
-		UpdateExpression: aws.String("SET #status = :status, actualWinner = :actualWinner"),
-		ExpressionAttributeNames: map[string]string{
-			"#status": "status", // 'status' is a reserved word in DynamoDB
-		},
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":status":       &types.AttributeValueMemberS{Value: status},
-			":actualWinner": &types.AttributeValueMemberS{Value: actualWinner},
-		},
-	}
-
-	_, err := db.client.UpdateItem(ctx, input)
-	if err != nil {
-		return fmt.Errorf("failed to update prediction: %w", err)
-	}
-
-	return nil
-}
-
 // GetPredictionsByGame retrieves all predictions for a specific game
-func (db *DB) GetPredictionsByGame(ctx context.Context, gameID string) ([]models.Prediction, error) {
-	// This requires a GSI on gameId
-	// For now, use scan with filter (inefficient but works)
-
+// TODO: Add GSI to make this more efficient
+func (db *DB) GetPredictionsByGame(ctx context.Context, gameId string) ([]models.Prediction, error) {
 	input := &dynamodb.ScanInput{
 		TableName:        aws.String(db.predictionsTable),
 		FilterExpression: aws.String("gameId = :gameId"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":gameId": &types.AttributeValueMemberS{Value: gameID},
+			":gameId": &types.AttributeValueMemberS{Value: gameId},
 		},
 	}
 
@@ -131,6 +106,7 @@ func (db *DB) GetPredictionsByGame(ctx context.Context, gameID string) ([]models
 	}
 
 	predictions := make([]models.Prediction, 0, len(result.Items))
+
 	for _, item := range result.Items {
 		var prediction models.Prediction
 		if err := attributevalue.UnmarshalMap(item, &prediction); err != nil {
@@ -142,13 +118,14 @@ func (db *DB) GetPredictionsByGame(ctx context.Context, gameID string) ([]models
 	return predictions, nil
 }
 
-// BatchCreatePredictions creates multiple predictions efficiently
+// BatchCreatePredictions creates multiple predictions in a single batch operation
 func (db *DB) BatchCreatePredictions(ctx context.Context, predictions []models.Prediction) error {
-	// DynamoDB BatchWriteItem supports up to 25 items
-	const batchSize = 25
+	const batchSize = 25 // DynamoDB batch write limit
+	now := time.Now()
 
 	for i := 0; i < len(predictions); i += batchSize {
 		end := i + batchSize
+		// Adjust end if it exceeds the slice length
 		if end > len(predictions) {
 			end = len(predictions)
 		}
@@ -156,8 +133,10 @@ func (db *DB) BatchCreatePredictions(ctx context.Context, predictions []models.P
 		batch := predictions[i:end]
 		writeRequests := make([]types.WriteRequest, 0, len(batch))
 
-		for _, pred := range batch {
-			item, err := attributevalue.MarshalMap(pred)
+		for _, prediction := range batch {
+			prediction.SubmittedAt = now
+
+			item, err := attributevalue.MarshalMap(prediction)
 			if err != nil {
 				return fmt.Errorf("failed to marshal prediction: %w", err)
 			}

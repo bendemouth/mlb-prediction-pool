@@ -112,3 +112,94 @@ func (db *DB) UpdateGameResult(ctx context.Context, gameID, winner string) error
 
 	return nil
 }
+
+// CompleteGame marks a game as completed and updates related predictions
+func (db *DB) CompleteGame(ctx context.Context, gameId string, homeScore int, awayScore int, winnerId string) error {
+	// Update game record
+	updateGameInput := &dynamodb.UpdateItemInput{
+		TableName: aws.String(db.gamesTable),
+		Key: map[string]types.AttributeValue{
+			"gameId": &types.AttributeValueMemberS{Value: gameId},
+		},
+		UpdateExpression: aws.String(
+			"SET #status = :status, homeScore = :homeScore, awayScore = :awayScore, winner = :winner",
+		),
+		ExpressionAttributeNames: map[string]string{
+			"#status": "status",
+		},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":status":    &types.AttributeValueMemberS{Value: "completed"},
+			":homeScore": &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", homeScore)},
+			":awayScore": &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", awayScore)},
+			":winner":    &types.AttributeValueMemberS{Value: winnerId},
+		},
+	}
+
+	_, err := db.client.UpdateItem(ctx, updateGameInput)
+	if err != nil {
+		return fmt.Errorf("failed to update game: %w", err)
+	}
+
+	// Get all predictions for the game
+	predictions, err := db.GetPredictionsByGame(ctx, gameId)
+	if err != nil {
+		return fmt.Errorf("failed to get predictions: %w", err)
+	}
+
+	// Update each prediction based on the game result
+	for _, prediction := range predictions {
+		if err := db.updatePredictionsWithResult(ctx, prediction.UserId, gameId, winnerId, homeScore, awayScore); err != nil {
+			return fmt.Errorf("failed to update prediction for user %s: %w", prediction.UserId, err)
+		}
+	}
+
+	return nil
+}
+
+func (db *DB) updatePredictionsWithResult(ctx context.Context, userId, gameId, winnerId string, homeScore, awayScore int) error {
+	pred, err := db.GetPrediction(ctx, userId, gameId)
+	if err != nil {
+		return fmt.Errorf("failed to get prediction: %w", err)
+	}
+
+	homeScoreError := abs(pred.HomeScorePredicted - float32(homeScore))
+	awayScoreError := abs(pred.AwayScorePredicted - float32(awayScore))
+	totalScoreError := abs(pred.TotalScorePredicted - float32(homeScore+awayScore))
+	winnerCorrect := pred.PredictedWinnerId == winnerId
+
+	input := &dynamodb.UpdateItemInput{
+		TableName: aws.String(db.predictionsTable),
+		Key: map[string]types.AttributeValue{
+			"userId": &types.AttributeValueMemberS{Value: userId},
+			"gameId": &types.AttributeValueMemberS{Value: gameId},
+		},
+		UpdateExpression: aws.String(
+			"SET actualWinnerId = :actualWinnerId, " +
+				"winnerCorrect = :winnerCorrect, " +
+				"homeScoreError = :homeScoreError, " +
+				"awayScoreError = :awayScoreError, " +
+				"totalScoreError = :totalScoreError, ",
+		),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":actualWinnerId":  &types.AttributeValueMemberS{Value: winnerId},
+			":winnerCorrect":   &types.AttributeValueMemberBOOL{Value: winnerCorrect},
+			":homeScoreError":  &types.AttributeValueMemberN{Value: fmt.Sprintf("%f", homeScoreError)},
+			":awayScoreError":  &types.AttributeValueMemberN{Value: fmt.Sprintf("%f", awayScoreError)},
+			":totalScoreError": &types.AttributeValueMemberN{Value: fmt.Sprintf("%f", totalScoreError)},
+		},
+	}
+
+	_, err = db.client.UpdateItem(ctx, input)
+	if err != nil {
+		return fmt.Errorf("failed to update prediction: %w", err)
+	}
+
+	return nil
+}
+
+func abs(x float32) float32 {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
