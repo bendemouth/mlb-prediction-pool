@@ -37,7 +37,7 @@ func (h *Handler) getPredictions(writer http.ResponseWriter, request *http.Reque
 }
 
 // Handle POST /predictions
-func (h *Handler) submitPredictions(writer http.ResponseWriter, request *http.Request) {
+func (h *Handler) SubmitPredictions(writer http.ResponseWriter, request *http.Request) {
 	// TODO: Make a better way to submit predictions with user authentication token
 	var req models.SubmitPredictionRequest
 
@@ -46,7 +46,7 @@ func (h *Handler) submitPredictions(writer http.ResponseWriter, request *http.Re
 		return
 	}
 
-	if req.GameId == "" || req.PredictedWinnerId == 0 {
+	if req.GameId == "" || req.PredictedWinnerId == "" {
 		h.respondError(writer, http.StatusBadRequest, "Game Id and predicted winner are required")
 	}
 

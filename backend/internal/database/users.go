@@ -16,9 +16,7 @@ import (
 func (db *DB) CreateUser(ctx context.Context, user *models.User) error {
 	user.CreatedAt = time.Now()
 
-	entity := ToUserEntity(user)
-
-	item, err := attributevalue.MarshalMap(entity)
+	item, err := attributevalue.MarshalMap(user)
 	if err != nil {
 		return fmt.Errorf("Failed to marshal user entity: %w", err)
 	}
@@ -26,7 +24,7 @@ func (db *DB) CreateUser(ctx context.Context, user *models.User) error {
 	input := &dynamodb.PutItemInput{
 		TableName:           aws.String(db.usersTable),
 		Item:                item,
-		ConditionExpression: aws.String("attribute_not_exists(PK)"),
+		ConditionExpression: aws.String("attribute_not_exists(userId)"),
 	}
 
 	_, err = db.client.PutItem(ctx, input)
@@ -42,8 +40,7 @@ func (db *DB) GetUser(ctx context.Context, userId string) (*models.User, error) 
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(db.usersTable),
 		Key: map[string]types.AttributeValue{
-			"PK": &types.AttributeValueMemberS{Value: fmt.Sprintf("USER#%s", userId)},
-			"SK": &types.AttributeValueMemberS{Value: "PROFILE"},
+			"userId": &types.AttributeValueMemberS{Value: userId},
 		},
 	}
 
@@ -52,13 +49,13 @@ func (db *DB) GetUser(ctx context.Context, userId string) (*models.User, error) 
 		return nil, fmt.Errorf("Failed to get item from DynamoDB: %w", err)
 	}
 
-	var entity UserEntity
-	err = attributevalue.UnmarshalMap(result.Item, &entity)
+	var user models.User
+	err = attributevalue.UnmarshalMap(result.Item, &user)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to unmarshal user entity: %w", err)
 	}
 
-	return FromUserEntity(&entity), nil
+	return &user, nil
 }
 
 // ListUsers retrieves all users from the Users table
