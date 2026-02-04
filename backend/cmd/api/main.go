@@ -35,11 +35,23 @@ func main() {
 	// Setup routes
 	mux := http.NewServeMux()
 
+	// Health check endpoint
 	mux.HandleFunc("/health", h.HandleHealthCheck)
-	mux.HandleFunc("/api/predictions", h.HandlePredictions)
-	mux.HandleFunc("/api/predictions/bulk", h.HandleBulkPredictions)
-	mux.HandleFunc("/api/leaderboard", h.HandleLeaderboard)
-	mux.HandleFunc("/api/stats", h.HandleGetUserStats)
+
+	// Leaderboard endpoints
+	mux.HandleFunc("/leaderboard", h.GetLeaderboard)
+
+	// Predictions endpoints
+	mux.HandleFunc("/predictions", h.GetPredictionsByUser)
+	mux.HandleFunc("/predictions/create", h.CreatePrediction)
+	mux.HandleFunc("/predictions/batchCreate", h.CreateBulkPredictions)
+	mux.HandleFunc("/predictions/game", h.GetPredictionsByGame)
+
+	// User endpoints
+	mux.HandleFunc("/users/create", h.HandleCreateUser)
+	mux.HandleFunc("/users", h.HandleGetUser)
+	mux.HandleFunc("/users/listUsers", h.HandleListUsers)
+	mux.HandleFunc("/users/stats", h.HandleGetUserStats)
 
 	// Apply middleware
 	handler := middleware.Logger(

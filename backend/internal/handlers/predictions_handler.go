@@ -9,20 +9,9 @@ import (
 	"github.com/bendemouth/mlb-prediction-pool/internal/requests"
 )
 
-func (h *Handler) HandlePredictions(writer http.ResponseWriter, request *http.Request) {
-	switch request.Method {
-	case http.MethodGet:
-		h.getPredictionsByUser(writer, request)
-	case http.MethodPost:
-		h.createPrediction(writer, request)
-	default:
-		h.respondError(writer, http.StatusMethodNotAllowed, "Method not allowed")
-	}
-}
-
 // Handle GET /predictions
 // Eg: /predictions?userId=123
-func (h *Handler) getPredictionsByUser(writer http.ResponseWriter, request *http.Request) {
+func (h *Handler) GetPredictionsByUser(writer http.ResponseWriter, request *http.Request) {
 	userId := request.URL.Query().Get("userId")
 	if userId == "" {
 		h.respondError(writer, http.StatusBadRequest, "User id is required")
@@ -39,7 +28,7 @@ func (h *Handler) getPredictionsByUser(writer http.ResponseWriter, request *http
 }
 
 // POST /predictions
-func (h *Handler) createPrediction(writer http.ResponseWriter, request *http.Request) {
+func (h *Handler) CreatePrediction(writer http.ResponseWriter, request *http.Request) {
 	var req requests.SubmitPredictionRequest
 
 	if err := h.decodeJsonBody(request, &req); err != nil {
@@ -102,7 +91,7 @@ func (h *Handler) createPrediction(writer http.ResponseWriter, request *http.Req
 
 // Handle bulk predictions submission
 // POST /predictions/bulk
-func (h *Handler) HandleBulkPredictions(writer http.ResponseWriter, request *http.Request) {
+func (h *Handler) CreateBulkPredictions(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
 		h.respondError(writer, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -162,7 +151,7 @@ func (h *Handler) HandleBulkPredictions(writer http.ResponseWriter, request *htt
 }
 
 // Handle GET /predictions/game?gameId=123
-func (h *Handler) HandleGetPredictionsByGame(writer http.ResponseWriter, request *http.Request) {
+func (h *Handler) GetPredictionsByGame(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodGet {
 		h.respondError(writer, http.StatusMethodNotAllowed, "Method not allowed")
 		return

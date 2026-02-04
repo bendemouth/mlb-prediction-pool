@@ -9,7 +9,7 @@ import (
 )
 
 // HandleCreateUser creates a new user
-// POST /users
+// POST /users/create
 func (h *Handler) HandleCreateUser(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
 		h.respondError(writer, http.StatusMethodNotAllowed, "Method not allowed")
@@ -65,7 +65,7 @@ func (h *Handler) HandleGetUser(writer http.ResponseWriter, request *http.Reques
 }
 
 // HandleListUsers retrieves all users
-// GET /users
+// GET /users/listUsers
 func (h *Handler) HandleListUsers(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodGet {
 		h.respondError(writer, http.StatusMethodNotAllowed, "Method not allowed")
@@ -78,4 +78,27 @@ func (h *Handler) HandleListUsers(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 	h.respondJson(writer, http.StatusOK, users)
+}
+
+// HandleGetUserStats retrieves statistics for a specific user
+// GET /users/stats?user_id=username
+func (h *Handler) HandleGetUserStats(writer http.ResponseWriter, request *http.Request) {
+	if request.Method != http.MethodGet {
+		h.respondError(writer, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	userId := request.URL.Query().Get("user_id")
+	if userId == "" {
+		h.respondError(writer, http.StatusBadRequest, "Missing user_id parameter")
+		return
+	}
+
+	stats, err := h.db.GetUserStats(request.Context(), userId)
+	if err != nil {
+		h.respondError(writer, http.StatusInternalServerError, "Failed to get user stats")
+		return
+	}
+
+	h.respondJson(writer, http.StatusOK, stats)
 }
