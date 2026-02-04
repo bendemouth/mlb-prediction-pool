@@ -160,3 +160,24 @@ func (h *Handler) HandleBulkPredictions(writer http.ResponseWriter, request *htt
 
 	h.respondJson(writer, http.StatusCreated, predictions)
 }
+
+// Handle GET /predictions/game?gameId=123
+func (h *Handler) HandleGetPredictionsByGame(writer http.ResponseWriter, request *http.Request) {
+	if request.Method != http.MethodGet {
+		h.respondError(writer, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	gameId := request.URL.Query().Get("gameId")
+	if gameId == "" {
+		h.respondError(writer, http.StatusBadRequest, "Game id is required")
+		return
+	}
+
+	predictions, err := h.db.GetPredictionsByGame(request.Context(), gameId)
+	if err != nil {
+		h.respondError(writer, http.StatusInternalServerError, fmt.Sprint("Failed to get predictions: ", err))
+		return
+	}
+	h.respondJson(writer, http.StatusOK, predictions)
+}
