@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"net/mail"
 	"time"
 
 	"github.com/bendemouth/mlb-prediction-pool/internal/models"
@@ -13,11 +14,13 @@ import (
 func (h *Handler) HandleCreateUser(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
 		h.respondError(writer, http.StatusMethodNotAllowed, "Method not allowed")
+		return
 	}
 
 	newUuid, err := uuid.NewUUID()
 	if err != nil {
 		h.respondError(writer, http.StatusInternalServerError, "Failed to generate user ID")
+		return
 	}
 
 	newUserGuid := newUuid.String()
@@ -25,6 +28,18 @@ func (h *Handler) HandleCreateUser(writer http.ResponseWriter, request *http.Req
 	var req struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`
+	}
+	if err := h.decodeJsonBody(request, &req); err != nil {
+		h.respondError(writer, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	if !isValidEmail(req.Email) {
+		h.respondError(writer, http.StatusBadRequest, "Invalid email address")
+		return
+	}
+	if req.Username == "" {
+		h.respondError(writer, http.StatusBadRequest, "Username is required")
+		return
 	}
 
 	newUserRequest := &models.User{
@@ -37,6 +52,7 @@ func (h *Handler) HandleCreateUser(writer http.ResponseWriter, request *http.Req
 	err = h.db.CreateUser(request.Context(), newUserRequest)
 	if err != nil {
 		h.respondError(writer, http.StatusInternalServerError, "Failed to create user")
+		return
 	}
 
 	h.respondJson(writer, http.StatusCreated, newUserRequest)
@@ -101,4 +117,9 @@ func (h *Handler) HandleGetUserStats(writer http.ResponseWriter, request *http.R
 	}
 
 	h.respondJson(writer, http.StatusOK, stats)
+}
+
+func isValidEmail(email string) bool {
+	_, err := mail.ParseAddress(email)
+	return err == nil
 }

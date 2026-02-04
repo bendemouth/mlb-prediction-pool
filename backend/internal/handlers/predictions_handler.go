@@ -54,22 +54,6 @@ func (h *Handler) CreatePrediction(writer http.ResponseWriter, request *http.Req
 		return
 	}
 
-	if game.Status != "upcoming" {
-		h.respondError(writer, http.StatusBadRequest, "Cannot predict for games that have started")
-		return
-	}
-
-	if time.Now().After(game.Date) {
-		h.respondError(writer, http.StatusBadRequest, "Game has already started")
-		return
-	}
-
-	// Validate predicted winner is one of the teams
-	if req.PredictedWinnerId != game.HomeTeamId && req.PredictedWinnerId != game.AwayTeamId {
-		h.respondError(writer, http.StatusBadRequest, "Invalid predicted winner")
-		return
-	}
-
 	// Create prediction
 	prediction := &models.Prediction{
 		UserId:              userId,
@@ -79,6 +63,11 @@ func (h *Handler) CreatePrediction(writer http.ResponseWriter, request *http.Req
 		TotalScorePredicted: req.TotalScorePredicted,
 		Confidence:          req.Confidence,
 		PredictedWinnerId:   req.PredictedWinnerId,
+	}
+
+	if err := validateGamePrediction(*prediction, game); err != nil {
+		h.respondError(writer, http.StatusBadRequest, fmt.Sprintf("Invalid prediction: %s", err.Error()))
+		return
 	}
 
 	if err := h.db.CreatePrediction(request.Context(), prediction); err != nil {
@@ -121,17 +110,7 @@ func (h *Handler) CreateBulkPredictions(writer http.ResponseWriter, request *htt
 			return
 		}
 
-		if game.Status != "upcoming" || time.Now().After(game.Date) {
-			h.respondError(writer, http.StatusBadRequest, fmt.Sprintf("Cannot predict for games that have started: %s", prediction.GameId))
-			return
-		}
-
-		if prediction.PredictedWinnerId != game.HomeTeamId && prediction.PredictedWinnerId != game.AwayTeamId {
-			h.respondError(writer, http.StatusBadRequest, fmt.Sprintf("Invalid predicted winner for game: %s", prediction.GameId))
-			return
-		}
-
-		predictions = append(predictions, models.Prediction{
+		prediction := models.Prediction{
 			UserId:              userId,
 			GameId:              prediction.GameId,
 			HomeScorePredicted:  prediction.HomeScorePredicted,
@@ -139,7 +118,14 @@ func (h *Handler) CreateBulkPredictions(writer http.ResponseWriter, request *htt
 			TotalScorePredicted: prediction.TotalScorePredicted,
 			Confidence:          prediction.Confidence,
 			PredictedWinnerId:   prediction.PredictedWinnerId,
-		})
+		}
+
+		if err := validateGamePrediction(prediction, game); err != nil {
+			h.respondError(writer, http.StatusBadRequest, fmt.Sprintf("Invalid prediction for game %s: %s", prediction.GameId, err.Error()))
+			return
+		}
+
+		predictions = append(predictions, prediction)
 	}
 
 	if err := h.db.BatchCreatePredictions(request.Context(), predictions); err != nil {
@@ -169,4 +155,20 @@ func (h *Handler) GetPredictionsByGame(writer http.ResponseWriter, request *http
 		return
 	}
 	h.respondJson(writer, http.StatusOK, predictions)
+}
+
+func validateGamePrediction(prediction models.Prediction, game *models.Game) error {
+	if prediction.PredictedWinnerId != game.HomeTeamId && prediction.PredictedWinnerId != game.AwayTeamId {
+		return fmt.Errorf("predicted winner %s is not a valid team for game %s", prediction.PredictedWinnerId, game.GameId)
+	}
+	if prediction.HomeScorePredicted < 0 || prediction.AwayScorePredicted < 0 || prediction.TotalScorePredicted < 0 {
+		return fmt.Errorf("predicted scores must be non-negative for game %s", game.GameId)
+	}
+	if game.Status != "upcoming" {
+		return fmt.Errorf("cannot predict for games that have started: %s", game.GameId)
+	}
+	if time.Now().After(game.Date) {
+		return fmt.Errorf("cannot predict for games that have started: %s", game.GameId)
+	}
+	return nil
 }

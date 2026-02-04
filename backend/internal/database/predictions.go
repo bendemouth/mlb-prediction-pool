@@ -62,8 +62,8 @@ func (db *DB) GetUserPredictions(ctx context.Context, userId string) ([]models.P
 	return predictions, nil
 }
 
-// GetPrediction retrieves a specific prediction by userId and gameId
-func (db *DB) GetPrediction(ctx context.Context, userId, gameId string) (*models.Prediction, error) {
+// GetPredictionByUser retrieves a specific prediction by userId and gameId
+func (db *DB) GetPredictionByUser(ctx context.Context, userId, gameId string) (*models.Prediction, error) {
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(db.predictionsTable),
 		Key: map[string]types.AttributeValue{
@@ -90,23 +90,22 @@ func (db *DB) GetPrediction(ctx context.Context, userId, gameId string) (*models
 }
 
 // GetPredictionsByGame retrieves all predictions for a specific game
-// TODO: Add GSI to make this more efficient
 func (db *DB) GetPredictionsByGame(ctx context.Context, gameId string) ([]models.Prediction, error) {
-	input := &dynamodb.ScanInput{
-		TableName:        aws.String(db.predictionsTable),
-		FilterExpression: aws.String("gameId = :gameId"),
+	input := &dynamodb.QueryInput{
+		TableName:              aws.String(db.predictionsTable),
+		IndexName:              aws.String("GameIdIndex"), // Your GSI name
+		KeyConditionExpression: aws.String("gameId = :gameId"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":gameId": &types.AttributeValueMemberS{Value: gameId},
 		},
 	}
 
-	result, err := db.client.Scan(ctx, input)
+	result, err := db.client.Query(ctx, input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to scan predictions: %w", err)
+		return nil, fmt.Errorf("failed to query predictions: %w", err)
 	}
 
 	predictions := make([]models.Prediction, 0, len(result.Items))
-
 	for _, item := range result.Items {
 		var prediction models.Prediction
 		if err := attributevalue.UnmarshalMap(item, &prediction); err != nil {

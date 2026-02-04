@@ -157,7 +157,7 @@ func (db *DB) CompleteGame(ctx context.Context, gameId string, homeScore int, aw
 }
 
 func (db *DB) updatePredictionsWithResult(ctx context.Context, userId, gameId, winnerId string, homeScore, awayScore int) error {
-	pred, err := db.GetPrediction(ctx, userId, gameId)
+	pred, err := db.GetPredictionByUser(ctx, userId, gameId)
 	if err != nil {
 		return fmt.Errorf("failed to get prediction: %w", err)
 	}
