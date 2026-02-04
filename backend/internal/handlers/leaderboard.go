@@ -12,7 +12,7 @@ func (h *Handler) HandleLeaderboard(writer http.ResponseWriter, request *http.Re
 		return
 	}
 
-	leaderboard, err := h.leaderboardService.GetLeaderboard(request.Context())
+	leaderboard, err := h.db.CalculateLeaderboard(request.Context())
 
 	if err != nil {
 		h.respondError(writer, http.StatusInternalServerError, "Failed to get leaderboard")
@@ -22,7 +22,9 @@ func (h *Handler) HandleLeaderboard(writer http.ResponseWriter, request *http.Re
 	h.respondJson(writer, http.StatusOK, leaderboard)
 }
 
-func (h *Handler) HandleUserStats(writer http.ResponseWriter, request *http.Request) {
+// HandleGetUserStats retrieves statistics for a specific user
+// GET /user/stats?user_id=username
+func (h *Handler) HandleGetUserStats(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodGet {
 		h.respondError(writer, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -34,7 +36,7 @@ func (h *Handler) HandleUserStats(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	stats, err := h.leaderboardService.GetUserStats(request.Context(), userId)
+	stats, err := h.db.GetUserStats(request.Context(), userId)
 	if err != nil {
 		h.respondError(writer, http.StatusInternalServerError, "Failed to get user stats")
 		return

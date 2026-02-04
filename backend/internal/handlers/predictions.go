@@ -3,14 +3,16 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/bendemouth/mlb-prediction-pool/internal/models"
+	"github.com/bendemouth/mlb-prediction-pool/internal/requests"
 )
 
 func (h *Handler) HandlePredictions(writer http.ResponseWriter, request *http.Request) {
 	switch request.Method {
 	case http.MethodGet:
-		h.getPredictions(writer, request)
+		h.getPredictionsByUser(writer, request)
 	case http.MethodPost:
 		h.createPrediction(writer, request)
 	default:
@@ -20,14 +22,14 @@ func (h *Handler) HandlePredictions(writer http.ResponseWriter, request *http.Re
 
 // Handle GET /predictions
 // Eg: /predictions?userId=123
-func (h *Handler) getPredictions(writer http.ResponseWriter, request *http.Request) {
+func (h *Handler) getPredictionsByUser(writer http.ResponseWriter, request *http.Request) {
 	userId := request.URL.Query().Get("userId")
 	if userId == "" {
 		h.respondError(writer, http.StatusBadRequest, "User id is required")
 		return
 	}
 
-	predictions, err := h.predictionService.GetUserPredictions(userId)
+	predictions, err := h.db.GetUserPredictions(request.Context(), userId)
 	if err != nil {
 		h.respondError(writer, http.StatusInternalServerError, fmt.Sprint("Failed to get predictions: ", err))
 		return
@@ -36,10 +38,9 @@ func (h *Handler) getPredictions(writer http.ResponseWriter, request *http.Reque
 	h.respondJson(writer, http.StatusOK, predictions)
 }
 
-// Handle POST /predictions
-func (h *Handler) SubmitPredictions(writer http.ResponseWriter, request *http.Request) {
-	// TODO: Make a better way to submit predictions with user authentication token
-	var req models.SubmitPredictionRequest
+// POST /predictions
+func (h *Handler) createPrediction(writer http.ResponseWriter, request *http.Request) {
+	var req requests.SubmitPredictionRequest
 
 	if err := h.decodeJsonBody(request, &req); err != nil {
 		h.respondError(writer, http.StatusBadRequest, "Invalid request body")
@@ -48,14 +49,51 @@ func (h *Handler) SubmitPredictions(writer http.ResponseWriter, request *http.Re
 
 	if req.GameId == "" || req.PredictedWinnerId == "" {
 		h.respondError(writer, http.StatusBadRequest, "Game Id and predicted winner are required")
+		return
 	}
 
-	// TODO: JWT Token?
-	userId := request.Header.Get("X-User-Id")
+	userId := request.URL.Query().Get("userId")
+	if userId == "" {
+		h.respondError(writer, http.StatusUnauthorized, "User ID header required")
+		return
+	}
 
-	prediction, err := h.predictionService.SubmitPrediction(request.Context(), userId, *request)
+	// Validate game exists and is upcoming
+	game, err := h.db.GetGame(request.Context(), req.GameId)
 	if err != nil {
-		h.respondError(writer, http.StatusInternalServerError, fmt.Sprint("Failed to submit prediction: ", err))
+		h.respondError(writer, http.StatusNotFound, "Game not found")
+		return
+	}
+
+	if game.Status != "upcoming" {
+		h.respondError(writer, http.StatusBadRequest, "Cannot predict for games that have started")
+		return
+	}
+
+	if time.Now().After(game.Date) {
+		h.respondError(writer, http.StatusBadRequest, "Game has already started")
+		return
+	}
+
+	// Validate predicted winner is one of the teams
+	if req.PredictedWinnerId != game.HomeTeamId && req.PredictedWinnerId != game.AwayTeamId {
+		h.respondError(writer, http.StatusBadRequest, "Invalid predicted winner")
+		return
+	}
+
+	// Create prediction
+	prediction := &models.Prediction{
+		UserId:              userId,
+		GameId:              req.GameId,
+		HomeScorePredicted:  req.HomeScorePredicted,
+		AwayScorePredicted:  req.AwayScorePredicted,
+		TotalScorePredicted: req.TotalScorePredicted,
+		Confidence:          req.Confidence,
+		PredictedWinnerId:   req.PredictedWinnerId,
+	}
+
+	if err := h.db.CreatePrediction(request.Context(), prediction); err != nil {
+		h.respondError(writer, http.StatusInternalServerError, "Failed to create prediction")
 		return
 	}
 
@@ -64,7 +102,6 @@ func (h *Handler) SubmitPredictions(writer http.ResponseWriter, request *http.Re
 
 // Handle bulk predictions submission
 // POST /predictions/bulk
-
 func (h *Handler) HandleBulkPredictions(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
 		h.respondError(writer, http.StatusMethodNotAllowed, "Method not allowed")
@@ -72,7 +109,7 @@ func (h *Handler) HandleBulkPredictions(writer http.ResponseWriter, request *htt
 	}
 
 	var req struct {
-		Predictions []models.SubmitPredictionRequest `json:"predictions"`
+		Predictions []requests.SubmitPredictionRequest `json:"predictions"`
 	}
 
 	if err := h.decodeJsonBody(request, &req); err != nil {
@@ -80,13 +117,46 @@ func (h *Handler) HandleBulkPredictions(writer http.ResponseWriter, request *htt
 		return
 	}
 
-	userId := request.Header.Get("X-User-Id")
-
-	results, err := h.predictionService.SubmitBulkPredictions(request.Context(), userId, req.Predictions)
-	if err != nil {
-		h.respondError(writer, http.StatusInternalServerError, fmt.Sprint("Failed to submit bulk predictions: ", err))
+	userId := request.URL.Query().Get("userId")
+	if userId == "" {
+		h.respondError(writer, http.StatusUnauthorized, "User ID header required")
 		return
 	}
 
-	h.respondJson(writer, http.StatusCreated, results)
+	predictions := make([]models.Prediction, 0, len(req.Predictions))
+
+	for _, prediction := range req.Predictions {
+		game, err := h.db.GetGame(request.Context(), prediction.GameId)
+		if err != nil {
+			h.respondError(writer, http.StatusNotFound, fmt.Sprintf("Game not found: %s", prediction.GameId))
+			return
+		}
+
+		if game.Status != "upcoming" || time.Now().After(game.Date) {
+			h.respondError(writer, http.StatusBadRequest, fmt.Sprintf("Cannot predict for games that have started: %s", prediction.GameId))
+			return
+		}
+
+		if prediction.PredictedWinnerId != game.HomeTeamId && prediction.PredictedWinnerId != game.AwayTeamId {
+			h.respondError(writer, http.StatusBadRequest, fmt.Sprintf("Invalid predicted winner for game: %s", prediction.GameId))
+			return
+		}
+
+		predictions = append(predictions, models.Prediction{
+			UserId:              userId,
+			GameId:              prediction.GameId,
+			HomeScorePredicted:  prediction.HomeScorePredicted,
+			AwayScorePredicted:  prediction.AwayScorePredicted,
+			TotalScorePredicted: prediction.TotalScorePredicted,
+			Confidence:          prediction.Confidence,
+			PredictedWinnerId:   prediction.PredictedWinnerId,
+		})
+	}
+
+	if err := h.db.BatchCreatePredictions(request.Context(), predictions); err != nil {
+		h.respondError(writer, http.StatusInternalServerError, "Failed to create predictions")
+		return
+	}
+
+	h.respondJson(writer, http.StatusCreated, predictions)
 }

@@ -11,8 +11,6 @@ import (
 // Define Handler struct
 type Handler struct {
 	db                 *database.DB
-	predictionService  *services.PredictionService
-	leaderboardService *services.LeaderboardService
 	healthcheckService *services.HealthcheckService
 }
 
@@ -20,8 +18,6 @@ type Handler struct {
 func NewHandler(db *database.DB) *Handler {
 	return &Handler{
 		db:                 db,
-		predictionService:  services.NewPredictionService(db),
-		leaderboardService: services.NewLeaderboardService(db),
 		healthcheckService: services.NewHealthcheckService(db),
 	}
 }
@@ -44,13 +40,4 @@ func (h *Handler) respondError(writer http.ResponseWriter, status int, message s
 // Decode JSON request body
 func (h *Handler) decodeJsonBody(request *http.Request, dst interface{}) error {
 	return json.NewDecoder(request.Body).Decode(dst)
-}
-
-func (h *Handler) createPrediction(writer http.ResponseWriter, request *http.Request) {
-	prediction, err := h.predictionService.CreatePrediction(writer, request)
-	if err != nil {
-		h.respondError(writer, http.StatusInternalServerError, "Failed to create prediction")
-		return
-	}
-	h.respondJson(writer, http.StatusOK, prediction)
 }

@@ -39,7 +39,7 @@ func main() {
 	mux.HandleFunc("/api/predictions", h.HandlePredictions)
 	mux.HandleFunc("/api/predictions/bulk", h.HandleBulkPredictions)
 	mux.HandleFunc("/api/leaderboard", h.HandleLeaderboard)
-	mux.HandleFunc("/api/stats", h.HandleUserStats)
+	mux.HandleFunc("/api/stats", h.HandleGetUserStats)
 
 	// Apply middleware
 	handler := middleware.Logger(
