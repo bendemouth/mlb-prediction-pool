@@ -54,6 +54,9 @@ func (db *DB) GetUser(ctx context.Context, userId string) (*models.User, error) 
 	if err != nil {
 		return nil, fmt.Errorf("Failed to unmarshal user entity: %w", err)
 	}
+	if result.Item == nil {
+		return nil, fmt.Errorf("User with ID %s not found", userId)
+	}
 
 	return &user, nil
 }
