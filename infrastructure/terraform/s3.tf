@@ -7,9 +7,14 @@ resource "aws_s3_bucket" "mlb_data" {
     }
 }
 
-resource "aws_s3_bucket_acl" "mlb_data_acl" {
+# Add public access block to ensure bucket is private
+resource "aws_s3_bucket_public_access_block" "mlb_data" {
     bucket = aws_s3_bucket.mlb_data.id
-    acl    = "private"
+
+    block_public_acls       = true
+    block_public_policy     = true
+    ignore_public_acls      = true
+    restrict_public_buckets = true
 }
 
 resource "aws_s3_bucket" "user_models" {
@@ -21,9 +26,14 @@ resource "aws_s3_bucket" "user_models" {
     }
 }
 
-resource "aws_s3_bucket_acl" "user_models_acl" {
+# Add public access block to ensure bucket is private
+resource "aws_s3_bucket_public_access_block" "user_models" {
     bucket = aws_s3_bucket.user_models.id
-    acl    = "private"
+
+    block_public_acls       = true
+    block_public_policy     = true
+    ignore_public_acls      = true
+    restrict_public_buckets = true
 }
 
 resource "aws_s3_bucket_versioning" "user_models_versioning" {
@@ -42,12 +52,12 @@ resource "aws_s3_bucket_lifecycle_configuration" "mlb_data_lifecycle" {
         status = "Enabled"
 
         transition {
-            days = 30
+            days          = 30
             storage_class = "STANDARD_IA"
         }
 
         transition {
-            days = 90
+            days          = 90
             storage_class = "GLACIER_IR"
         }
     }

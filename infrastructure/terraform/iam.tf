@@ -46,3 +46,35 @@ resource "aws_iam_role_policy" "lambda_dynamodb_policy" {
         ]
     })
 }
+
+# Add S3 access policy
+resource "aws_iam_role_policy" "lambda_s3_policy" {
+    name = "s3-access-policy"
+    role = aws_iam_role.lambda_exec_role.id
+
+    policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {
+                Effect = "Allow"
+                Action = [
+                    "s3:GetObject",
+                    "s3:PutObject",
+                    "s3:ListBucket"
+                ]
+                Resource = [
+                    aws_s3_bucket.mlb_data.arn,
+                    "${aws_s3_bucket.mlb_data.arn}/*",
+                    aws_s3_bucket.user_models.arn,
+                    "${aws_s3_bucket.user_models.arn}/*"
+                ]
+            }
+        ]
+    })
+}
+
+# Add CloudWatch Logs policy
+resource "aws_iam_role_policy_attachment" "lambda_logs" {
+    role       = aws_iam_role.lambda_exec_role.name
+    policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
