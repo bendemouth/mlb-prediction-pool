@@ -1,17 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+// Define types that match your Go backend structs
+interface HealthStatus {
+  service: string;
+  database: string;
+}
+
 function App() {
-  const [healthStatus, setHealthStatus] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Check backend health on mount
   useEffect(() => {
     checkBackendHealth();
   }, []);
 
-  const checkBackendHealth = async () => {
+  const checkBackendHealth = async (): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
@@ -23,12 +29,13 @@ function App() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const data = await response.json();
-      console.log('Health check response:', data); // Debug log
+      const data: HealthStatus = await response.json();
+      console.log('Health check response:', data);
       
       setHealthStatus(data);
     } catch (err) {
-      setError(`Failed to connect to backend: ${err.message}`);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(`Failed to connect to backend: ${errorMessage}`);
       console.error('Backend health check failed:', err);
     } finally {
       setLoading(false);
@@ -62,13 +69,13 @@ function App() {
                 <div className="status-item">
                   <span className="status-label">Service:</span>
                   <span className={`status-value ${healthStatus.service === 'healthy' ? 'healthy' : 'unhealthy'}`}>
-                    {healthStatus.service || 'unknown'}
+                    {healthStatus.service}
                   </span>
                 </div>
                 <div className="status-item">
                   <span className="status-label">Database:</span>
                   <span className={`status-value ${healthStatus.database === 'healthy' ? 'healthy' : 'unhealthy'}`}>
-                    {healthStatus.database || 'unknown'}
+                    {healthStatus.database}
                   </span>
                 </div>
               </div>
