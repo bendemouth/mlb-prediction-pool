@@ -2,12 +2,13 @@
 resource "aws_dynamodb_table" "users" {
     name = "${var.project_name}-${var.environment}-users"
     billing_mode = "PAY_PER_REQUEST"
-    hash_key = "user_id"
 
     attribute {
         name = "userId"
         type = "S"
     }
+
+    hash_key = "userId"
 
     tags = {
         Project     = var.project_name
@@ -19,10 +20,9 @@ resource "aws_dynamodb_table" "users" {
 resource "aws_dynamodb_table" "predictions" {
     name = "${var.project_name}-${var.environment}-predictions"
     billing_mode = "PAY_PER_REQUEST"
-    hash_key = "prediction_id"
 
     attribute {
-        name = "predictionId"
+        name = "userId"
         type = "S"
     }
 
@@ -31,10 +31,13 @@ resource "aws_dynamodb_table" "predictions" {
         type = "S"
     }
 
+    hash_key  = "userId"
+    range_key = "gameId"
+
     global_secondary_index {
-        name               = "GameIndex"
-        hash_key          = "gameId"
-        projection_type   = "ALL"
+        name            = "GameIdIndex"
+        hash_key        = "gameId"
+        projection_type = "ALL"
     }
 
     tags = {
@@ -47,12 +50,13 @@ resource "aws_dynamodb_table" "predictions" {
 resource "aws_dynamodb_table" "games" {
     name = "${var.project_name}-${var.environment}-games"
     billing_mode = "PAY_PER_REQUEST"
-    hash_key = "game_id"
 
     attribute {
         name = "gameId"
         type = "S"
     }
+
+    hash_key = "gameId"
 
     tags = {
         Project     = var.project_name
@@ -64,12 +68,13 @@ resource "aws_dynamodb_table" "games" {
 resource "aws_dynamodb_table" "models" {
     name = "${var.project_name}-${var.environment}-models"
     billing_mode = "PAY_PER_REQUEST"
-    hash_key = "model_id"
 
     attribute {
         name = "modelId"
         type = "S"
     }
+
+    hash_key = "modelId"
 
     tags = {
         Project     = var.project_name

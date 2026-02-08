@@ -1,6 +1,5 @@
 resource "aws_s3_bucket" "mlb_data" {
     bucket = "${var.project_name}-${var.environment}-mlb-data"
-    acl    = "private"
 
     tags = {
         Project     = var.project_name
@@ -8,14 +7,23 @@ resource "aws_s3_bucket" "mlb_data" {
     }
 }
 
+resource "aws_s3_bucket_acl" "mlb_data_acl" {
+    bucket = aws_s3_bucket.mlb_data.id
+    acl    = "private"
+}
+
 resource "aws_s3_bucket" "user_models" {
     bucket = "${var.project_name}-${var.environment}-user-models"
-    acl    = "private"
 
     tags = {
         Project     = var.project_name
         Environment = var.environment
     }
+}
+
+resource "aws_s3_bucket_acl" "user_models_acl" {
+    bucket = aws_s3_bucket.user_models.id
+    acl    = "private"
 }
 
 resource "aws_s3_bucket_versioning" "user_models_versioning" {
