@@ -1,62 +1,61 @@
 services:
   dynamodb-local:
     image: amazon/dynamodb-local:latest
-    container_name: dynamodb-local
+    container_name: mlb-pool-dynamodb-dev
     ports:
       - "8000:8000"
     command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
     networks:
-      - mlb-pool-network
+      - mlb-pool-dev
 
   backend:
-    image: golang:1.23-alpine
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: mlb-pool-backend-dev
-    working_dir: /app
     ports:
       - "8080:8080"
     volumes:
       - ./backend:/app
-      - backend-cache:/go/pkg/mod
-    command: sh -c "apk add --no-cache git && go mod download && go install github.com/air-verse/air@latest && air -c .air.toml"
+      - /app/tmp
     environment:
-      - PORT=8080
-      - DYNAMODB_REGION=us-west-2
-      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
-      - DYNAMODB_USERS_TABLE=mlb-prediction-pool-users
-      - DYNAMODB_PREDICTIONS_TABLE=mlb-prediction-pool-predictions
-      - DYNAMODB_GAMES_TABLE=mlb-prediction-pool-games
-      - DYNAMODB_MODELS_TABLE=mlb-prediction-pool-models
-      - ALLOWED_ORIGINS=http://localhost:3000
+      PORT: 8080
+      DYNAMODB_REGION: us-west-2
+      DYNAMODB_ENDPOINT: http://dynamodb-local:8000
+      DYNAMODB_USERS_TABLE: mlb-prediction-pool-dev-users
+      DYNAMODB_PREDICTIONS_TABLE: mlb-prediction-pool-dev-predictions
+      DYNAMODB_GAMES_TABLE: mlb-prediction-pool-dev-games
+      DYNAMODB_MODELS_TABLE: mlb-prediction-pool-dev-models
+      ALLOWED_ORIGINS: http://localhost:3000
     depends_on:
       - dynamodb-local
     networks:
-      - mlb-pool-network
+      - mlb-pool-dev
+    restart: unless-stopped
 
   frontend:
-    image: node:18-alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
     container_name: mlb-pool-frontend-dev
-    working_dir: /app
     ports:
-      - "3000:3000"
+      - "3000:3000"  
     volumes:
       - ./frontend:/app
-      - frontend-cache:/app/node_modules
-    command: sh -c "npm install && npm start"
+      - /app/node_modules
     environment:
-      - WATCHPACK_POLLING=true
-      - CHOKIDAR_USEPOLLING=true
-      - WDS_SOCKET_PORT=3000
+      PORT: 3000
+      HOST: 0.0.0.0
+      CHOKIDAR_USEPOLLING: true
+      WDS_SOCKET_PORT: 3000
     depends_on:
       - backend
     networks:
-      - mlb-pool-network
+      - mlb-pool-dev
     stdin_open: true
     tty: true
 
 networks:
-  mlb-pool-network:
+  mlb-pool-dev:
     driver: bridge
-
-volumes:
-  backend-cache:
-  frontend-cache:
