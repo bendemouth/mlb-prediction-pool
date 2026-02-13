@@ -88,7 +88,7 @@ def fetch_team_stats() -> Dict:
 
     for table, stat_type in [(batting_table, 'batting'), (pitching_table, 'pitching'), (fielding_table, 'fielding')]:
         if table:
-            rows = table.find('tbody').find_all('tr')
+            rows = table.find('tbody').find_all('tr') # type: ignore
             for row in rows:
                 team_name_cell = row.find('th', {'data-stat': 'team_name'})
                 if team_name_cell:
