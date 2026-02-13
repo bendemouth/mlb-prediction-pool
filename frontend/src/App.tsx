@@ -22,7 +22,7 @@ function App() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('http://localhost:8080/health');
+      const response = await fetch('/health');
       
       // Check if response is OK
       if (!response.ok) {
@@ -57,14 +57,14 @@ function App() {
           
           {!loading && error && (
             <div className="status-error">
-              <p>❌ {error}</p>
+              <p>{error}</p>
               <button onClick={checkBackendHealth}>Retry Connection</button>
             </div>
           )}
           
           {!loading && !error && healthStatus && (
             <div className="status-success">
-              <h2>✅ Backend Connected</h2>
+              <h2>Backend Connected</h2>
               <div className="status-details">
                 <div className="status-item">
                   <span className="status-label">Service:</span>

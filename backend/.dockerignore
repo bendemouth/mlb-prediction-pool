@@ -1,0 +1,14 @@
+tmp/
+*.exe
+main
+.env
+.env.*
+*.log
+.git
+.gitignore
+README.md
+.air.toml
+Dockerfile
+.dockerignore
+.vscode
+.idea

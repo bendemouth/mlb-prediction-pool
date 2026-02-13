@@ -1,6 +1,6 @@
 module github.com/bendemouth/mlb-prediction-pool
 
-go 1.25.5
+go 1.23
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.1 // direct

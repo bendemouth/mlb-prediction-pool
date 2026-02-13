@@ -60,7 +60,7 @@ func NewDB(ctx context.Context, cfg DBConfig) (*DB, error) {
 func NewDBFromEnv(ctx context.Context) (*DB, error) {
 	cfg := DBConfig{
 		Region:           getEnv("DYNAMODB_REGION", "us-west-2"),
-		Endpoint:         os.Getenv("DYNAMODB_ENDPOINT"), // Optional for local dev
+		Endpoint:         getEnv("DYNAMODB_ENDPOINT", ""),
 		UsersTable:       getEnv("DYNAMODB_USERS_TABLE", "mlb-prediction-pool-users"),
 		PredictionsTable: getEnv("DYNAMODB_PREDICTIONS_TABLE", "mlb-prediction-pool-predictions"),
 		GamesTable:       getEnv("DYNAMODB_GAMES_TABLE", "mlb-prediction-pool-games"),
