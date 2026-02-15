@@ -8,10 +8,26 @@ services:
     networks:
       - mlb-pool-dev
 
+  dynamodb-init:
+    image: amazon/aws-cli:latest
+    container_name: mlb-pool-dynamodb-init
+    depends_on:
+      - dynamodb-local
+    volumes:
+      - ./backend/scripts:/scripts
+    environment:
+      AWS_ACCESS_KEY_ID: fakeAccessKeyId
+      AWS_SECRET_ACCESS_KEY: fakeSecretAccessKey
+      AWS_DEFAULT_REGION: us-west-2
+    entrypoint: ["/bin/bash", "/scripts/init-dynamodb.sh"]
+    networks:
+      - mlb-pool-dev
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: development
     container_name: mlb-pool-backend-dev
     ports:
       - "8080:8080"
@@ -20,6 +36,9 @@ services:
       - /app/tmp
     environment:
       PORT: 8080
+      AWS_ACCESS_KEY_ID: fakeAccessKeyId
+      AWS_SECRET_ACCESS_KEY: fakeSecretAccessKey
+      AWS_REGION: us-west-2
       DYNAMODB_REGION: us-west-2
       DYNAMODB_ENDPOINT: http://dynamodb-local:8000
       DYNAMODB_USERS_TABLE: mlb-prediction-pool-dev-users
@@ -28,7 +47,7 @@ services:
       DYNAMODB_MODELS_TABLE: mlb-prediction-pool-dev-models
       ALLOWED_ORIGINS: http://localhost:3000
     depends_on:
-      - dynamodb-local
+      - dynamodb-init
     networks:
       - mlb-pool-dev
     restart: unless-stopped
@@ -40,7 +59,7 @@ services:
       target: development
     container_name: mlb-pool-frontend-dev
     ports:
-      - "3000:3000"  
+      - "3000:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -49,6 +68,7 @@ services:
       HOST: 0.0.0.0
       CHOKIDAR_USEPOLLING: true
       WDS_SOCKET_PORT: 3000
+      REACT_APP_API_URL: http://localhost:8080
     depends_on:
       - backend
     networks:

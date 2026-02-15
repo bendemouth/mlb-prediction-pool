@@ -20,11 +20,42 @@ func main() {
 
 	ctx := context.Background()
 
-	// Initialize database
-	db, err := database.NewDBFromEnv(ctx)
-	if err != nil {
-		log.Fatal("Failed to initialize database:", err)
+	// Initialize database with retries
+	var db *database.DB
+	var err error
+	maxRetries := 10
+	retryDelay := 2 * time.Second
+
+	log.Println("Attempting to connect to database...")
+
+	for i := 0; i < maxRetries; i++ {
+		db, err = database.NewDBFromEnv(ctx)
+		if err == nil {
+			// Test the connection with health check
+			healthErr := db.HealthCheck(ctx)
+			if healthErr == nil {
+				log.Println("Database connection established successfully")
+				break
+			}
+			// Log the actual error
+			log.Printf("Database health check failed (attempt %d/%d): %v",
+				i+1, maxRetries, healthErr)
+			err = healthErr
+		} else {
+			log.Printf("Database connection failed (attempt %d/%d): %v",
+				i+1, maxRetries, err)
+		}
+
+		if i < maxRetries-1 {
+			log.Printf("Retrying in %v...", retryDelay)
+			time.Sleep(retryDelay)
+		}
 	}
+
+	if err != nil {
+		log.Fatal("Failed to connect to database after retries:", err)
+	}
+
 	defer db.Close()
 
 	log.Println("Database connection established")
@@ -32,7 +63,7 @@ func main() {
 	// Create handlers
 	h := handlers.NewHandler(db)
 
-	// Setup routes
+	// Create server and routes
 	mux := http.NewServeMux()
 
 	// Health check endpoint
@@ -53,7 +84,7 @@ func main() {
 	mux.HandleFunc("/users/listUsers", h.HandleListUsers)
 	mux.HandleFunc("/users/stats", h.HandleGetUserStats)
 
-	// Apply middleware
+	// Add middleware
 	handler := middleware.Logger(
 		middleware.CORS(
 			middleware.Recovery(mux),
