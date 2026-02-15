@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import { BrowserRouter, Link, Routes, Route } from 'react-router-dom';
+import Leaderboad from './pages/Leaderboard';
+import Home from './pages/Home';
+import Predictions from './pages/Predictions';
+import UserProfile from './pages/UserProfile';
+import Leaderboard from './pages/Leaderboard';
+import Navbar from './components/Navbar';
+
 
 // Define types that match your Go backend structs
 interface HealthStatus {
@@ -43,54 +51,19 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>MLB Prediction Pool</h1>
-        
-        {/* Backend Status Indicator */}
-        <div className="status-indicator">
-          {loading && (
-            <div className="status-loading">
-              <p>🔄 Checking backend connection...</p>
-            </div>
-          )}
-          
-          {!loading && error && (
-            <div className="status-error">
-              <p>{error}</p>
-              <button onClick={checkBackendHealth}>Retry Connection</button>
-            </div>
-          )}
-          
-          {!loading && !error && healthStatus && (
-            <div className="status-success">
-              <h2>Backend Connected</h2>
-              <div className="status-details">
-                <div className="status-item">
-                  <span className="status-label">Service:</span>
-                  <span className={`status-value ${healthStatus.service === 'healthy' ? 'healthy' : 'unhealthy'}`}>
-                    {healthStatus.service}
-                  </span>
-                </div>
-                <div className="status-item">
-                  <span className="status-label">Database:</span>
-                  <span className={`status-value ${healthStatus.database === 'healthy' ? 'healthy' : 'unhealthy'}`}>
-                    {healthStatus.database}
-                  </span>
-                </div>
-              </div>
-              <button onClick={checkBackendHealth} className="refresh-button">
-                Refresh Status
-              </button>
-            </div>
-          )}
-        </div>
+    <BrowserRouter>
+      <div className="App">
+        <Navbar />
 
-        <nav className="main-nav">
-          <p>Coming soon: Leaderboard, Predictions, and more!</p>
-        </nav>
-      </header>
-    </div>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/predictions" element={<Predictions />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/profile" element={<UserProfile />} />
+          <Route path="/profile/:userId" element={<UserProfile />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
   );
 }
 
