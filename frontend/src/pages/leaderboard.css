@@ -1,0 +1,68 @@
+.leaderboard-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.leaderboard-container h2 {
+  color: var(--primary-color);
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.leaderboard-container table {
+  width: 100%;
+  background-color: var(--white);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(16, 37, 66, 0.1);
+  border-collapse: collapse;
+}
+
+.leaderboard-container thead {
+  background-color: var(--primary-color);
+  color: var(--white);
+}
+
+.leaderboard-container th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+}
+
+.leaderboard-container tbody tr {
+  border-bottom: 1px solid var(--alabaster-grey);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.leaderboard-container tbody tr:hover {
+  background-color: rgba(218, 218, 221, 0.3);
+}
+
+.leaderboard-container tbody tr:last-child {
+  border-bottom: none;
+}
+
+.leaderboard-container td {
+  padding: 1rem;
+  color: var(--text-color);
+}
+
+.leaderboard-container .loading {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+}
+
+/* Rank styling */
+.leaderboard-container td:first-child {
+  font-weight: bold;
+  color: var(--accent-color);
+  font-size: 1.1rem;
+}

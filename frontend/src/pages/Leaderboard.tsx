@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LeaderboardEntry } from '../models/leaderboard_entry';
+import './leaderboard.css';
 
 function Leaderboard() {
-    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+    const [leaderboard, setLeaderboard] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
@@ -28,13 +29,13 @@ function Leaderboard() {
     }
 
     if (loading) {
-        return <div>Loading...</div>;
+        return <div className="leaderboard-container"><div className="loading">Loading...</div></div>;
     }
 
     return (
-        <div className='leaderboard-page'>
+        <div className="leaderboard-container">
             <h2>Leaderboard</h2>
-            <table className="leaderboard-table">
+            <table>
                 <thead>
                     <tr>
                         <th>Rank</th>

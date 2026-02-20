@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import './App.css';
 import { BrowserRouter, Link, Routes, Route } from 'react-router-dom';
-import Leaderboad from './pages/Leaderboard';
 import Home from './pages/Home';
 import Predictions from './pages/Predictions';
 import UserProfile from './pages/UserProfile';
 import Leaderboard from './pages/Leaderboard';
-import Navbar from './components/Navbar';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import AppNavbar from './components/Navbar';
 
 
 // Define types that match your Go backend structs
@@ -51,19 +51,27 @@ function App() {
   };
 
   return (
-    <BrowserRouter>
-      <div className="App">
-        <Navbar />
-
+    <Box sx={{ minHeight: "100vh" }}>
+      <AppNavbar
+        title={
+          <Box component="span" sx={{ display: "inline-flex", alignItems: "baseline" }}>
+            (
+            <Box component="span" sx={{ color: "#e9422f" }}>
+              ML
+            </Box>
+            )B Predictions
+          </Box>
+        }
+      />
+      <Container maxWidth="lg" sx={{ py: 3 }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/predictions" element={<Predictions />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/profile" element={<UserProfile />} />
-          <Route path="/profile/:userId" element={<UserProfile />} />
         </Routes>
-      </div>
-    </BrowserRouter>
+      </Container>
+    </Box>
   );
 }
 

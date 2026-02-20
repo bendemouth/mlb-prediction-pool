@@ -1,41 +1,43 @@
 .App {
   min-height: 100vh;
-  background-color: #282c34;
+  background-color: var(--background-color);
 }
 
 .App-header {
   padding: 40px 20px;
-  color: white;
+  color: var(--text-color);
   text-align: center;
 }
 
 .App-header h1 {
   font-size: 2.5rem;
   margin-bottom: 30px;
-  color: #61dafb;
+  color: var(--accent-color);
 }
 
 .status-indicator {
-  background-color: #3a3f4b;
+  background-color: var(--white);
   padding: 30px;
   border-radius: 12px;
   margin: 20px auto;
   max-width: 500px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 6px rgba(16, 37, 66, 0.15);
+  border: 2px solid var(--khaki-beige);
 }
 
 .status-loading {
-  color: #61dafb;
+  color: var(--primary-color);
   font-size: 1.1rem;
 }
 
 .status-success {
-  color: #4caf50;
+  color: var(--success-color);
 }
 
 .status-success h2 {
   margin-bottom: 20px;
   font-size: 1.5rem;
+  color: var(--primary-color);
 }
 
 .status-details {
@@ -50,13 +52,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 15px;
-  background-color: #282c34;
+  background-color: var(--alabaster-grey);
   border-radius: 6px;
 }
 
 .status-label {
   font-weight: bold;
-  color: #aaa;
+  color: var(--text-color);
   font-size: 1rem;
 }
 
@@ -69,17 +71,17 @@
 }
 
 .status-value.healthy {
-  background-color: #2d5016;
-  color: #4caf50;
+  background-color: #e8f5e9;
+  color: var(--success-color);
 }
 
 .status-value.unhealthy {
-  background-color: #5c1a1a;
-  color: #f44336;
+  background-color: #ffebee;
+  color: var(--error-color);
 }
 
 .status-error {
-  color: #f44336;
+  color: var(--error-color);
 }
 
 .status-error p {
@@ -90,32 +92,35 @@
 button {
   margin-top: 15px;
   padding: 10px 20px;
-  background-color: #61dafb;
+  background-color: var(--accent-color);
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   font-weight: bold;
-  color: #282c34;
-  transition: background-color 0.2s;
+  color: var(--white);
+  transition: all 0.2s ease;
 }
 
 button:hover {
-  background-color: #4fa8c5;
+  background-color: #c73727;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(233, 66, 47, 0.3);
 }
 
 .refresh-button {
-  background-color: #3a3f4b;
-  color: #61dafb;
-  border: 2px solid #61dafb;
+  background-color: var(--white);
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
 }
 
 .refresh-button:hover {
-  background-color: #4a5060;
+  background-color: var(--primary-color);
+  color: var(--white);
 }
 
 .main-nav {
   margin-top: 40px;
   font-size: 1.2rem;
-  color: #aaa;
+  color: var(--text-secondary);
 }
