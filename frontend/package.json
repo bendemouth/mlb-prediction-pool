@@ -11,7 +11,6 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^13.5.0",
-    "@types/node": "^25.2.2",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
     "axios": "^1.13.5",
@@ -29,7 +28,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "seed:local": "DYNAMODB_ENDPOINT=http://localhost:8000 ts-node scripts/seedDatabase.ts",
+    "seed:dev": "DYNAMODB_REGION=us-east-1 ts-node scripts/seedDatabase.ts"
   },
   "eslintConfig": {
     "extends": [
@@ -48,5 +49,11 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.994.0",
+    "@aws-sdk/lib-dynamodb": "^3.994.0",
+    "@types/node": "^25.3.0",
+    "ts-node": "^10.9.2"
   }
 }

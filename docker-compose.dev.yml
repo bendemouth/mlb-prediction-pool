@@ -4,15 +4,49 @@ services:
     container_name: mlb-pool-dynamodb-dev
     ports:
       - "8000:8000"
-    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
+    volumes:
+      - ./dynamodb-data:/home/dynamodblocal/data
     networks:
       - mlb-pool-dev
+
+  # Healthcheck service that waits for DynamoDB to be ready
+  dynamodb-healthcheck:
+    image: amazon/aws-cli:latest
+    container_name: mlb-pool-dynamodb-healthcheck
+    depends_on:
+      - dynamodb-local
+    networks:
+      - mlb-pool-dev
+    environment:
+      AWS_ACCESS_KEY_ID: fakeAccessKeyId
+      AWS_SECRET_ACCESS_KEY: fakeSecretAccessKey
+      AWS_DEFAULT_REGION: us-west-2
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo 'Waiting for DynamoDB to be ready...';
+        echo 'Trying to connect to: http://dynamodb-local:8000';
+        max_attempts=60;
+        attempt=0;
+        while [ $$attempt -lt $$max_attempts ]; do
+          attempt=$$((attempt + 1));
+          echo "Attempt $$attempt/$$max_attempts...";
+          if aws dynamodb list-tables --endpoint-url http://dynamodb-local:8000 --region us-west-2 2>&1 | grep -q 'TableNames'; then
+            echo 'DynamoDB is ready!';
+            exit 0;
+          fi;
+          sleep 2;
+        done;
+        echo 'ERROR: DynamoDB failed to become ready after 120 seconds';
+        exit 1;
 
   dynamodb-init:
     image: amazon/aws-cli:latest
     container_name: mlb-pool-dynamodb-init
     depends_on:
-      - dynamodb-local
+      dynamodb-healthcheck:
+        condition: service_completed_successfully
     volumes:
       - ./backend/scripts:/scripts
     environment:
@@ -20,6 +54,27 @@ services:
       AWS_SECRET_ACCESS_KEY: fakeSecretAccessKey
       AWS_DEFAULT_REGION: us-west-2
     entrypoint: ["/bin/bash", "/scripts/init-dynamodb.sh"]
+    networks:
+      - mlb-pool-dev
+
+  # Data seeder service
+  data-seeder:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: seeder
+    container_name: mlb-pool-data-seeder
+    depends_on:
+      dynamodb-init:
+        condition: service_completed_successfully
+    environment:
+      DYNAMODB_ENDPOINT: http://dynamodb-local:8000
+      DYNAMODB_REGION: us-west-2
+      DYNAMODB_USERS_TABLE: mlb-prediction-pool-dev-users
+      DYNAMODB_GAMES_TABLE: mlb-prediction-pool-dev-games
+      DYNAMODB_PREDICTIONS_TABLE: mlb-prediction-pool-dev-predictions
+      AWS_ACCESS_KEY_ID: fakeAccessKeyId
+      AWS_SECRET_ACCESS_KEY: fakeSecretAccessKey
     networks:
       - mlb-pool-dev
 
@@ -47,7 +102,8 @@ services:
       DYNAMODB_MODELS_TABLE: mlb-prediction-pool-dev-models
       ALLOWED_ORIGINS: http://localhost:3000
     depends_on:
-      - dynamodb-init
+      data-seeder:
+        condition: service_completed_successfully
     networks:
       - mlb-pool-dev
     restart: unless-stopped
@@ -79,3 +135,6 @@ services:
 networks:
   mlb-pool-dev:
     driver: bridge
+
+volumes:
+  dynamodb-data:

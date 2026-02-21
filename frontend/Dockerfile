@@ -8,12 +8,26 @@ COPY package*.json ./
 
 RUN npm install 
 
-
 COPY . .
 
 EXPOSE 3000
 
 CMD ["npm", "start"]
+
+FROM node:18-alpine AS seeder
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm ci || npm install
+
+COPY tsconfig.json ./
+COPY scripts/ ./scripts/
+
+RUN npm install --no-save @aws-sdk/client-dynamodb @aws-sdk/lib-dynamodb ts-node typescript @types/node
+
+CMD ["npx", "ts-node", "scripts/seedDatabase.ts"]
 
 # Build stage
 FROM node:18-alpine AS builder
