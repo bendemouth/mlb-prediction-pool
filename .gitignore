@@ -5,3 +5,4 @@ backend/tmp/
 infrastructure/terraform/.terraform*
 infrastructure/terraform/terraform.tfstate
 infrastructure/terraform/terraform.tfstate.backup
+dynamodb-data/shared-local-instance.db

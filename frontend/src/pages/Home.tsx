@@ -13,12 +13,7 @@ import {
 import SportsBaseballIcon from '@mui/icons-material/SportsBaseball';
 import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import PredictionsIcon from '@mui/icons-material/Psychology';
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-}
+import User from '../models/user';
 
 function Home() {
   const [users, setUsers] = useState<User[]>([]);

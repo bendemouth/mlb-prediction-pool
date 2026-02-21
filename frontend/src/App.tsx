@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Link, Routes, Route } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import {  Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Predictions from './pages/Predictions';
 import UserProfile from './pages/UserProfile';
