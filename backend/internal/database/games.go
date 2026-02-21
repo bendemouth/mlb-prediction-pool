@@ -178,7 +178,7 @@ func (db *DB) updatePredictionsWithResult(ctx context.Context, userId, gameId, w
 				"winnerCorrect = :winnerCorrect, " +
 				"homeScoreError = :homeScoreError, " +
 				"awayScoreError = :awayScoreError, " +
-				"totalScoreError = :totalScoreError, ",
+				"totalScoreError = :totalScoreError",
 		),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":actualWinnerId":  &types.AttributeValueMemberS{Value: winnerId},

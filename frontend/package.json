@@ -29,8 +29,6 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint": "npx eslint ./src",
-    "fixlint": "npx eslint ./src --fix",
     "seed:local": "DYNAMODB_ENDPOINT=http://localhost:8000 ts-node scripts/seedDatabase.ts",
     "seed:dev": "DYNAMODB_REGION=us-east-1 ts-node scripts/seedDatabase.ts"
   },
