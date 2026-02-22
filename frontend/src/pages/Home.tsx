@@ -14,6 +14,8 @@ import SportsBaseballIcon from '@mui/icons-material/SportsBaseball';
 import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import PredictionsIcon from '@mui/icons-material/Psychology';
 import User from '../models/user';
+import { Icon, Trophy} from 'lucide-react';
+import { baseball } from '@lucide/lab';
 
 function Home() {
   const [users, setUsers] = useState<User[]>([]);
@@ -37,10 +39,12 @@ function Home() {
     }
   };
 
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ textAlign: 'center', mb: 6 }}>
-        <SportsBaseballIcon sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} />
+        {/*<SportsBaseballIcon sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} /> / */}
+        <Icon iconNode={baseball} size={100} />
         <Typography variant="h2" component="h1" gutterBottom>
           Welcome to (ML)B Predictions
         </Typography>
@@ -69,7 +73,8 @@ function Home() {
             onClick={() => navigate('/leaderboard')}
           >
             <CardContent sx={{ textAlign: 'center', p: 4 }}>
-              <LeaderboardIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
+              {/*<LeaderboardIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />*/}
+              <Trophy size={50} />
               <Typography variant="h5" component="h2" gutterBottom>
                 Leaderboard
               </Typography>
@@ -112,15 +117,16 @@ function Home() {
               transition: 'transform 0.2s',
               '&:hover': { transform: 'translateY(-8px)' },
             }}
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate('/leaderboard')}
           >
             <CardContent sx={{ textAlign: 'center', p: 4 }}>
-              <SportsBaseballIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
+              {/*<SportsBaseballIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} /> */}
+               <Icon iconNode={baseball} size={50} style={{ marginBottom: 16 }} />
               <Typography variant="h5" component="h2" gutterBottom>
-                Your Stats
+                View Stats
               </Typography>
               <Typography color="text.secondary">
-                View your prediction history and performance metrics
+                View prediction history and performance metrics for all users
               </Typography>
             </CardContent>
           </Card>

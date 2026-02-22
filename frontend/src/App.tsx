@@ -68,7 +68,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/predictions" element={<Predictions />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/profile" element={<UserProfile />} />
+          <Route path="/profile/:userId" element={<UserProfile />} />
         </Routes>
       </Container>
     </Box>
