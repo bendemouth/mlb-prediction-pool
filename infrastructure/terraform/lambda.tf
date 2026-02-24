@@ -1,5 +1,17 @@
+resource "null_resource" "prepare_data_ingestion_package" {
+    triggers = {
+        requirements_hash = filesha256("${path.module}/../../lambda/requirements.txt")
+        handler_hash      = filesha256("${path.module}/../../lambda/data-ingestion/handler.py")
+    }
+
+    provisioner "local-exec" {
+        command = "python -m pip install -r ${path.module}/../../lambda/requirements.txt -t ${path.module}/../../lambda/data-ingestion --upgrade"
+    }
+}
+
 # Automatically zip the Lambda function
 data "archive_file" "lambda_zip" {
+    depends_on  = [null_resource.prepare_data_ingestion_package]
     type        = "zip"
     source_dir  = "${path.module}/../../lambda/data-ingestion"
     output_path = "${path.module}/../../lambda/data-ingestion/lambda.zip"
@@ -26,6 +38,7 @@ resource "aws_lambda_function" "data_ingestion" {
             MODELS_TABLE       = aws_dynamodb_table.models.name
             DATA_BUCKET        = aws_s3_bucket.mlb_data.bucket
             USER_MODELS_BUCKET = aws_s3_bucket.user_models.bucket
+            MLB_API_BASE       = var.mlb_api_base
         }
     }
 

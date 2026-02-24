@@ -6,3 +6,7 @@ infrastructure/terraform/.terraform*
 infrastructure/terraform/terraform.tfstate
 infrastructure/terraform/terraform.tfstate.backup
 dynamodb-data/shared-local-instance.db
+lambda/data-ingestion/*
+!lambda/data-ingestion/handler.py
+!lambda/data-ingestion/requirements.txt
+!lambda/data-ingestion/lambda.zip

@@ -15,3 +15,9 @@ variable "environment" {
     type = string
     default = "dev"
 }
+
+variable "mlb_api_base" {
+    description = "MLB Stats API base URL"
+    type = string
+    default = "https://statsapi.mlb.com/api/v1"
+}
