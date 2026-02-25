@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bendemouth/mlb-prediction-pool/internal/middleware"
 	"github.com/bendemouth/mlb-prediction-pool/internal/models"
 	"github.com/bendemouth/mlb-prediction-pool/internal/requests"
 )
@@ -41,9 +42,9 @@ func (h *Handler) CreatePrediction(writer http.ResponseWriter, request *http.Req
 		return
 	}
 
-	userId := request.URL.Query().Get("userId")
-	if userId == "" {
-		h.respondError(writer, http.StatusUnauthorized, "User ID header required")
+	userId, ok := request.Context().Value(middleware.UserSubKey).(string)
+	if !ok || userId == "" {
+		h.respondError(writer, http.StatusUnauthorized, "User ID required in context")
 		return
 	}
 
@@ -95,9 +96,9 @@ func (h *Handler) CreateBulkPredictions(writer http.ResponseWriter, request *htt
 		return
 	}
 
-	userId := request.URL.Query().Get("userId")
-	if userId == "" {
-		h.respondError(writer, http.StatusUnauthorized, "User ID header required")
+	userId, ok := request.Context().Value(middleware.UserSubKey).(string)
+	if !ok || userId == "" {
+		h.respondError(writer, http.StatusUnauthorized, "User ID required in context")
 		return
 	}
 

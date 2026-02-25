@@ -27,3 +27,5 @@ require (
 	github.com/aws/smithy-go v1.24.0 // indirect
 	github.com/google/uuid v1.6.0 // direct
 )
+
+require github.com/golang-jwt/jwt/v5 v5.3.1 // indirect

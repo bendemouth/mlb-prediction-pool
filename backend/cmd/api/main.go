@@ -63,26 +63,26 @@ func main() {
 	// Create handlers
 	h := handlers.NewHandler(db)
 
-	// Create server and routes
+	// Create public server and routes
 	mux := http.NewServeMux()
 
-	// Health check endpoint
 	mux.HandleFunc("/health", h.HandleHealthCheck)
-
-	// Leaderboard endpoints
 	mux.HandleFunc("/leaderboard", h.GetLeaderboard)
 
+	// Create protected server and routes
+	authenticatedMux := http.NewServeMux()
+
 	// Predictions endpoints
-	mux.HandleFunc("/predictions", h.GetPredictionsByUser)
-	mux.HandleFunc("/predictions/create", h.CreatePrediction)
-	mux.HandleFunc("/predictions/batchCreate", h.CreateBulkPredictions)
-	mux.HandleFunc("/predictions/game", h.GetPredictionsByGame)
+	authenticatedMux.HandleFunc("/predictions", h.GetPredictionsByUser)
+	authenticatedMux.HandleFunc("/predictions/create", h.CreatePrediction)
+	authenticatedMux.HandleFunc("/predictions/batchCreate", h.CreateBulkPredictions)
+	authenticatedMux.HandleFunc("/predictions/game", h.GetPredictionsByGame)
 
 	// User endpoints
-	mux.HandleFunc("/users/create", h.HandleCreateUser)
-	mux.HandleFunc("/users", h.HandleGetUser)
-	mux.HandleFunc("/users/listUsers", h.HandleListUsers)
-	mux.HandleFunc("/users/stats", h.HandleGetUserStats)
+	authenticatedMux.HandleFunc("/users/create", h.HandleCreateUser)
+	authenticatedMux.HandleFunc("/users", h.HandleGetUser)
+	authenticatedMux.HandleFunc("/users/listUsers", h.HandleListUsers)
+	authenticatedMux.HandleFunc("/users/stats", h.HandleGetUserStats)
 
 	// Add middleware
 	handler := middleware.Logger(

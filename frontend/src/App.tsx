@@ -7,6 +7,7 @@ import Leaderboard from './pages/Leaderboard';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import AppNavbar from './components/Navbar';
+import { fetchAuthSession } from 'aws-amplify/auth';
 
 
 // Define types that match your Go backend structs
@@ -23,6 +24,9 @@ function App() {
   // Check backend health on mount
   useEffect(() => {
     checkBackendHealth();
+    fetchAuthSession()
+      .then(session => console.log('Auth session:', session))
+      .catch(err => console.error('Auth session error:', err));
   }, []);
 
   const checkBackendHealth = async (): Promise<void> => {

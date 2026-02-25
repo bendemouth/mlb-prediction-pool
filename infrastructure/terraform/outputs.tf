@@ -22,3 +22,13 @@ output "lambda_functions" {
         data_ingestion_lambda = aws_lambda_function.data_ingestion.arn
     }
 }
+
+output "cognito" {
+  description = "Cognito configuration values needed for the frontend"
+  value = {
+    user_pool_id     = aws_cognito_user_pool.main.id
+    user_pool_arn    = aws_cognito_user_pool.main.arn
+    web_client_id    = aws_cognito_user_pool_client.web_client.id
+    region           = var.aws_region
+  }
+}

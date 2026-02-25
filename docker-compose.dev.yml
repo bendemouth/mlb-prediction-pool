@@ -10,7 +10,6 @@ services:
     networks:
       - mlb-pool-dev
 
-  # Healthcheck service that waits for DynamoDB to be ready
   dynamodb-healthcheck:
     image: amazon/aws-cli:latest
     container_name: mlb-pool-dynamodb-healthcheck
@@ -18,15 +17,12 @@ services:
       - dynamodb-local
     networks:
       - mlb-pool-dev
-    environment:
-      AWS_ACCESS_KEY_ID: fakeAccessKeyId
-      AWS_SECRET_ACCESS_KEY: fakeSecretAccessKey
-      AWS_DEFAULT_REGION: us-west-2
+    env_file:
+      - .env.dev
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
         echo 'Waiting for DynamoDB to be ready...';
-        echo 'Trying to connect to: http://dynamodb-local:8000';
         max_attempts=60;
         attempt=0;
         while [ $$attempt -lt $$max_attempts ]; do
@@ -49,15 +45,12 @@ services:
         condition: service_completed_successfully
     volumes:
       - ./backend/scripts:/scripts
-    environment:
-      AWS_ACCESS_KEY_ID: fakeAccessKeyId
-      AWS_SECRET_ACCESS_KEY: fakeSecretAccessKey
-      AWS_DEFAULT_REGION: us-west-2
+    env_file:
+      - .env.dev
     entrypoint: ["/bin/bash", "/scripts/init-dynamodb.sh"]
     networks:
       - mlb-pool-dev
 
-  # Data seeder service
   data-seeder:
     build:
       context: ./frontend
@@ -67,14 +60,8 @@ services:
     depends_on:
       dynamodb-init:
         condition: service_completed_successfully
-    environment:
-      DYNAMODB_ENDPOINT: http://dynamodb-local:8000
-      DYNAMODB_REGION: us-west-2
-      DYNAMODB_USERS_TABLE: mlb-prediction-pool-dev-users
-      DYNAMODB_GAMES_TABLE: mlb-prediction-pool-dev-games
-      DYNAMODB_PREDICTIONS_TABLE: mlb-prediction-pool-dev-predictions
-      AWS_ACCESS_KEY_ID: fakeAccessKeyId
-      AWS_SECRET_ACCESS_KEY: fakeSecretAccessKey
+    env_file:
+      - .env.dev
     networks:
       - mlb-pool-dev
 
@@ -89,18 +76,10 @@ services:
     volumes:
       - ./backend:/app
       - /app/tmp
+    env_file:
+      - .env.dev 
     environment:
       PORT: 8080
-      AWS_ACCESS_KEY_ID: fakeAccessKeyId
-      AWS_SECRET_ACCESS_KEY: fakeSecretAccessKey
-      AWS_REGION: us-west-2
-      DYNAMODB_REGION: us-west-2
-      DYNAMODB_ENDPOINT: http://dynamodb-local:8000
-      DYNAMODB_USERS_TABLE: mlb-prediction-pool-dev-users
-      DYNAMODB_PREDICTIONS_TABLE: mlb-prediction-pool-dev-predictions
-      DYNAMODB_GAMES_TABLE: mlb-prediction-pool-dev-games
-      DYNAMODB_MODELS_TABLE: mlb-prediction-pool-dev-models
-      ALLOWED_ORIGINS: http://localhost:3000
     depends_on:
       data-seeder:
         condition: service_completed_successfully
@@ -119,12 +98,13 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    env_file:
+      - .env.dev 
     environment:
       PORT: 3000
       HOST: 0.0.0.0
       CHOKIDAR_USEPOLLING: true
       WDS_SOCKET_PORT: 3000
-      REACT_APP_API_URL: http://localhost:8080
     depends_on:
       - backend
     networks:

@@ -5,8 +5,8 @@ import (
 	"net/mail"
 	"time"
 
+	"github.com/bendemouth/mlb-prediction-pool/internal/middleware"
 	"github.com/bendemouth/mlb-prediction-pool/internal/models"
-	"github.com/google/uuid"
 )
 
 // HandleCreateUser creates a new user
@@ -17,13 +17,11 @@ func (h *Handler) HandleCreateUser(writer http.ResponseWriter, request *http.Req
 		return
 	}
 
-	newUuid, err := uuid.NewUUID()
-	if err != nil {
-		h.respondError(writer, http.StatusInternalServerError, "Failed to generate user ID")
+	cognitoSub, ok := middleware.GetUserSub(request)
+	if !ok {
+		h.respondError(writer, http.StatusInternalServerError, "Failed to get user sub")
 		return
 	}
-
-	newUserGuid := newUuid.String()
 
 	var req struct {
 		Username string `json:"username"`
@@ -43,13 +41,13 @@ func (h *Handler) HandleCreateUser(writer http.ResponseWriter, request *http.Req
 	}
 
 	newUserRequest := &models.User{
-		Id:        newUserGuid,
+		Id:        cognitoSub,
 		Username:  req.Username,
 		Email:     req.Email,
 		CreatedAt: time.Now(),
 	}
 
-	err = h.db.CreateUser(request.Context(), newUserRequest)
+	err := h.db.CreateUser(request.Context(), newUserRequest)
 	if err != nil {
 		h.respondError(writer, http.StatusInternalServerError, "Failed to create user")
 		return

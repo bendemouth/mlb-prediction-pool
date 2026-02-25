@@ -5,6 +5,10 @@ import { ThemeProvider } from '@emotion/react';
 import { theme } from './theme';
 import CssBaseline from '@mui/material/CssBaseline';
 import { BrowserRouter } from 'react-router-dom';
+import { Amplify } from 'aws-amplify';
+import amplifyConfig from './amplifyconfig';
+
+Amplify.configure(amplifyConfig);
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

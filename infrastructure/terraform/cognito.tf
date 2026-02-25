@@ -1,0 +1,62 @@
+resource "aws_cognito_user_pool" "main" {
+    name = "${var.project_name}-user-pool"
+
+    username_attributes = ["email"]
+    auto_verified_attributes = ["email"]
+
+    password_policy {
+        minimum_length = 8
+        require_uppercase = true
+        require_lowercase = true
+        require_numbers = true
+        require_symbols = false
+    }
+
+    verification_message_template {
+        default_email_option = "CONFIRM_WITH_CODE"
+        email_message = "Your verification code is {####}"
+        email_subject = "Verify your email for ${var.project_name}"
+    }
+
+    schema {
+        attribute_data_type = "String"
+        name = "email"
+        required = true
+        mutable = true
+
+        string_attribute_constraints {
+            min_length = 5
+            max_length = 255
+        }
+    }
+
+    tags = {
+        Environment = var.environment
+        Project     = var.project_name
+    }
+}
+
+resource "aws_cognito_user_pool_client" "web_client" {
+    name = "${var.project_name}-web-client"
+    user_pool_id = aws_cognito_user_pool.main.id
+
+    generate_secret = false
+
+    access_token_validity = 60 # minutes
+    id_token_validity = 60 # minutes
+    refresh_token_validity = 30 # days
+
+    token_validity_units {
+        access_token = "minutes"
+        id_token = "minutes"
+        refresh_token = "days"
+    }
+
+    explicit_auth_flows = [
+        "ALLOW_USER_SRP_AUTH",
+        "ALLOW_REFRESH_TOKEN_AUTH",
+        "ALLOW_USER_PASSWORD_AUTH"
+    ]
+
+    prevent_user_existence_errors = "ENABLED"
+}
