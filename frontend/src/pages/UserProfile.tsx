@@ -23,36 +23,72 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import UserStats from '../models/user_stats';
 import { Prediction } from '../models/prediction';
+import useAuth from '../hooks/useAuth';
+import User from '../models/user';
+import { normalizeUsername } from '../utils/profileRoute';
 
 function UserProfile() {
-  const { userId } = useParams<{ userId?: string }>();
+  const { username } = useParams<{ username?: string }>();
   const navigate = useNavigate();
+  const { getToken } = useAuth();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (userId) {
-      fetchUserData(userId);
+    if (username) {
+      fetchUserData(username);
     } else {
-      setError('No user ID provided');
+      setError('No username provided');
       setLoading(false);
     }
-  }, [userId]);
+  }, [username]);
 
-  const fetchUserData = async (id: string) => {
+  const fetchUserData = async (routeUsername: string) => {
     try {
       setLoading(true);
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+
+      const usersResponse = await fetch('/users/listUsers', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!usersResponse.ok) throw new Error('Failed to fetch users');
+
+      const users: User[] = await usersResponse.json();
+      const matchedUser = users.find(
+        (user) => user.username.toLowerCase() === normalizeUsername(routeUsername)
+      );
+
+      if (!matchedUser) {
+        setError('User not found');
+        setStats(null);
+        setPredictions([]);
+        return;
+      }
+
+      const userId = matchedUser.id;
       
       // Fetch user stats
-      const statsResponse = await fetch(`/users/stats?user_id=${id}`);
+      const statsResponse = await fetch(`/users/stats?user_id=${encodeURIComponent(userId)}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!statsResponse.ok) throw new Error('Failed to fetch user stats');
       const statsData = await statsResponse.json();
       setStats(statsData);
 
       // Fetch user predictions
-      const predsResponse = await fetch(`/predictions?userId=${id}`);
+      const predsResponse = await fetch(`/predictions?userId=${encodeURIComponent(userId)}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!predsResponse.ok) throw new Error('Failed to fetch predictions');
       const predsData = await predsResponse.json();
       setPredictions(predsData || []);

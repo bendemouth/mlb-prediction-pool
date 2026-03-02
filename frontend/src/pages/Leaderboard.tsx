@@ -17,6 +17,7 @@ import {
   Alert,
   Chip,
 } from '@mui/material';
+import { toProfilePath } from '../utils/profileRoute';
 
 function Leaderboard() {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -46,8 +47,8 @@ function Leaderboard() {
         }
     };
 
-    const handleUserClick = (userId: string) => {
-        navigate(`/profile/${userId}`);
+    const handleUserClick = (username: string) => {
+      navigate(toProfilePath(username));
     }
 
     const getRankColor = (rank: number) => {
@@ -113,7 +114,7 @@ function Leaderboard() {
               {leaderboard.map((entry: LeaderboardEntry) => (
                 <TableRow
                   key={entry.user_id}
-                  onClick={() => handleUserClick(entry.user_id)}
+                  onClick={() => handleUserClick(entry.username)}
                   sx={{
                     cursor: 'pointer',
                     '&:hover': { bgcolor: 'action.hover' },

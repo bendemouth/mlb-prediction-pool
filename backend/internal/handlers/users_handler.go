@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"net/mail"
 	"time"
 
+	"github.com/bendemouth/mlb-prediction-pool/internal/database"
 	"github.com/bendemouth/mlb-prediction-pool/internal/middleware"
 	"github.com/bendemouth/mlb-prediction-pool/internal/models"
 )
@@ -49,6 +51,10 @@ func (h *Handler) HandleCreateUser(writer http.ResponseWriter, request *http.Req
 
 	err := h.db.CreateUser(request.Context(), newUserRequest)
 	if err != nil {
+		if errors.Is(err, database.ErrUserAlreadyExists) {
+			h.respondError(writer, http.StatusConflict, "User already exists")
+			return
+		}
 		h.respondError(writer, http.StatusInternalServerError, "Failed to create user")
 		return
 	}
@@ -72,6 +78,10 @@ func (h *Handler) HandleGetUser(writer http.ResponseWriter, request *http.Reques
 
 	user, err := h.db.GetUser(request.Context(), userId)
 	if err != nil {
+		if errors.Is(err, database.ErrUserNotFound) {
+			h.respondError(writer, http.StatusNotFound, "User not found")
+			return
+		}
 		h.respondError(writer, http.StatusInternalServerError, "Failed to get user")
 		return
 	}

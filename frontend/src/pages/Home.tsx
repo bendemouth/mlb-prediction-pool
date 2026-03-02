@@ -16,11 +16,14 @@ import PredictionsIcon from '@mui/icons-material/Psychology';
 import User from '../models/user';
 import { Icon, Trophy} from 'lucide-react';
 import { baseball } from '@lucide/lab';
+import useAuth from '../hooks/useAuth';
+import { toProfilePath } from '../utils/profileRoute';
 
 function Home() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { getToken } = useAuth();
 
   useEffect(() => {
     fetchUsers();
@@ -28,7 +31,15 @@ function Home() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/users/listUsers');
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+
+      const response = await fetch('/users/listUsers', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       if (!response.ok) throw new Error('Failed to fetch users');
       const data = await response.json();
       setUsers(data || []);
@@ -149,7 +160,7 @@ function Home() {
               <Chip
                 key={user.id}
                 label={user.username}
-                onClick={() => navigate(`/profile/${user.id}`)}
+                onClick={() => navigate(toProfilePath(user.username))}
                 color="primary"
                 variant="outlined"
                 sx={{ cursor: 'pointer' }}

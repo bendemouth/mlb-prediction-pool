@@ -19,7 +19,9 @@ export type NavItem = {
 type AppNavbarProps = {
     title?: React.ReactNode;
     navItems?: NavItem[];
-}
+    isAuthenticated?: boolean;
+    onSignOut?: () => void | Promise<void>;
+};
 
 const defaultNavItems: NavItem[] = [
     { label: "Home", to: "/" },
@@ -29,18 +31,29 @@ const defaultNavItems: NavItem[] = [
 ];
 
 export default function AppNavbar(props: AppNavbarProps) {
-    const { title = "(ML)B Predictions", navItems = defaultNavItems } = props;
+    const {
+        title = "(ML)B Predictions",
+        navItems = defaultNavItems,
+        isAuthenticated = false,
+        onSignOut,
+    } = props;
+
     const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
 
-    const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => 
+    const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) =>
         setAnchorElNav(event.currentTarget);
 
     const handleCloseMenu = () => setAnchorElNav(null);
 
+    const handleSignOutClick = async () => {
+        handleCloseMenu();
+        await onSignOut?.();
+    };
+
     return (
         <AppBar position="sticky">
             <Container maxWidth="lg">
-                <Toolbar disableGutters sx={{ gap: 2}}>
+                <Toolbar disableGutters sx={{ gap: 2 }}>
                     <Typography
                         variant="h6"
                         component={NavLink}
@@ -49,12 +62,14 @@ export default function AppNavbar(props: AppNavbarProps) {
                             mr: 2,
                             fontWeight: 800,
                             color: "inherit",
-                            textDecoration: "none"
+                            textDecoration: "none",
                         }}
                     >
                         {title}
                     </Typography>
-                    <Box sx={{ flexGrow: 1}} />
+
+                    <Box sx={{ flexGrow: 1 }} />
+
                     {/* Mobile menu */}
                     <Box sx={{ display: { xs: "flex", md: "none" }, gap: 2 }}>
                         <IconButton
@@ -62,18 +77,19 @@ export default function AppNavbar(props: AppNavbarProps) {
                             aria-label="open navigation menu"
                             onClick={handleOpenMenu}
                             color="inherit"
-                            >
+                        >
                             <MenuIcon />
                         </IconButton>
+
                         <Menu
                             anchorEl={anchorElNav}
                             open={Boolean(anchorElNav)}
                             onClose={handleCloseMenu}
                             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                             transformOrigin={{ vertical: "top", horizontal: "right" }}
-                            >
+                        >
                             {navItems.map((item) => (
-                                <MenuItem onClick={handleCloseMenu}>
+                                <MenuItem key={item.to} onClick={handleCloseMenu}>
                                     <NavLink
                                         to={item.to}
                                         style={{ textDecoration: "none", color: "inherit", width: "100%" }}
@@ -86,8 +102,15 @@ export default function AppNavbar(props: AppNavbarProps) {
                                     </NavLink>
                                 </MenuItem>
                             ))}
-                            </Menu>
+
+                            {isAuthenticated && onSignOut && (
+                                <MenuItem onClick={handleSignOutClick}>
+                                    <Box sx={{ fontWeight: 600, width: "100%" }}>Sign out</Box>
+                                </MenuItem>
+                            )}
+                        </Menu>
                     </Box>
+
                     {/* Desktop menu */}
                     <Box sx={{ display: { xs: "none", md: "flex" }, gap: 1 }}>
                         {navItems.map((item) => (
@@ -98,20 +121,36 @@ export default function AppNavbar(props: AppNavbarProps) {
                                 sx={{
                                     color: "inherit",
                                     "&.active": {
-                                        backgroundColor: theme => theme.palette.primary.main,
-                                        color: theme => theme.palette.primary.contrastText,
+                                        backgroundColor: (theme) => theme.palette.primary.main,
+                                        color: (theme) => theme.palette.primary.contrastText,
                                     },
                                     "&:hover": {
-                                        backgroundColor: theme => theme.palette.primary.main,
-                                        color: theme => theme.palette.primary.contrastText,
+                                        backgroundColor: (theme) => theme.palette.primary.main,
+                                        color: (theme) => theme.palette.primary.contrastText,
                                     },
-                                }}>
+                                }}
+                            >
                                 {item.label}
                             </Button>
                         ))}
+
+                        {isAuthenticated && onSignOut && (
+                            <Button
+                                onClick={handleSignOutClick}
+                                sx={{
+                                    color: "inherit",
+                                    "&:hover": {
+                                        backgroundColor: (theme) => theme.palette.primary.main,
+                                        color: (theme) => theme.palette.primary.contrastText,
+                                    },
+                                }}
+                            >
+                                Sign out
+                            </Button>
+                        )}
                     </Box>
                 </Toolbar>
             </Container>
         </AppBar>
-    )
+    );
 }

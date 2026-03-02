@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,6 +12,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/bendemouth/mlb-prediction-pool/internal/models"
 )
+
+var ErrUserAlreadyExists = errors.New("user already exists")
+var ErrUserNotFound = errors.New("user not found")
 
 // CreateUser adds a new user to the Users table
 func (db *DB) CreateUser(ctx context.Context, user *models.User) error {
@@ -29,6 +33,10 @@ func (db *DB) CreateUser(ctx context.Context, user *models.User) error {
 
 	_, err = db.client.PutItem(ctx, input)
 	if err != nil {
+		var conditionalCheckFailed *types.ConditionalCheckFailedException
+		if errors.As(err, &conditionalCheckFailed) {
+			return ErrUserAlreadyExists
+		}
 		return fmt.Errorf("Failed to put item in DynamoDB: %w", err)
 	}
 
@@ -49,13 +57,14 @@ func (db *DB) GetUser(ctx context.Context, userId string) (*models.User, error) 
 		return nil, fmt.Errorf("Failed to get item from DynamoDB: %w", err)
 	}
 
+	if result.Item == nil {
+		return nil, ErrUserNotFound
+	}
+
 	var user models.User
 	err = attributevalue.UnmarshalMap(result.Item, &user)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to unmarshal user entity: %w", err)
-	}
-	if result.Item == nil {
-		return nil, fmt.Errorf("User with ID %s not found", userId)
 	}
 
 	return &user, nil
