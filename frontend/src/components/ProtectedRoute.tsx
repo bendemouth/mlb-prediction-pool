@@ -2,6 +2,7 @@ import useAuth from "../hooks/useAuth";
 import CircularProgress from "@mui/material/CircularProgress";
 import { Navigate, useLocation } from "react-router";
 import { Box } from "@mui/material";
+import React from "react";
 
 type ProtectedRouteProps = {
     children: React.ReactNode;

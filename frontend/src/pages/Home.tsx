@@ -10,8 +10,6 @@ import {
   Alert,
   Chip,
 } from '@mui/material';
-import SportsBaseballIcon from '@mui/icons-material/SportsBaseball';
-import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import PredictionsIcon from '@mui/icons-material/Psychology';
 import User from '../models/user';
 import { Icon, Trophy} from 'lucide-react';
@@ -54,7 +52,6 @@ function Home() {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ textAlign: 'center', mb: 6 }}>
-        {/*<SportsBaseballIcon sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} /> / */}
         <Icon iconNode={baseball} size={100} />
         <Typography variant="h2" component="h1" gutterBottom>
           Welcome to (ML)B Predictions
@@ -84,7 +81,6 @@ function Home() {
             onClick={() => navigate('/leaderboard')}
           >
             <CardContent sx={{ textAlign: 'center', p: 4 }}>
-              {/*<LeaderboardIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />*/}
               <Trophy size={50} />
               <Typography variant="h5" component="h2" gutterBottom>
                 Leaderboard
@@ -131,7 +127,6 @@ function Home() {
             onClick={() => navigate('/leaderboard')}
           >
             <CardContent sx={{ textAlign: 'center', p: 4 }}>
-              {/*<SportsBaseballIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} /> */}
                <Icon iconNode={baseball} size={50} style={{ marginBottom: 16 }} />
               <Typography variant="h5" component="h2" gutterBottom>
                 View Stats

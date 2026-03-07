@@ -33,7 +33,7 @@ function App() {
     checkBackendHealth();
     fetchAuthSession()
       .then(session => console.log('Auth session:', session))
-      .catch(err => console.error('Auth session error:', err));
+      .catch(err => setError(`Failed to fetch auth session: ${err.message || err}`));
   }, []);
 
   useEffect(() => {
@@ -79,7 +79,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, user?.userId]);
+  }, [getToken, isAuthenticated, user?.userId]);
 
   const checkBackendHealth = async (): Promise<void> => {
     try {
@@ -94,13 +94,11 @@ function App() {
       }
       
       const data: HealthStatus = await response.json();
-      console.log('Health check response:', data);
       
       setHealthStatus(data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(`Failed to connect to backend: ${errorMessage}`);
-      console.error('Backend health check failed:', err);
     } finally {
       setLoading(false);
     }

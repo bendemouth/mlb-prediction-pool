@@ -40,8 +40,7 @@ function Leaderboard() {
             const data = await response.json();
             setLeaderboard(data || []);
         } catch (error) {
-            console.error("Error fetching leaderboard:", error);
-            setError("Failed to load leaderboard. Please try again later.");
+            setError(error instanceof Error ? error.message : "An unknown error occurred");
         } finally {
             setLoading(false);
         }

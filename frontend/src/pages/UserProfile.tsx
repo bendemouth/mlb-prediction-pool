@@ -93,8 +93,7 @@ function UserProfile() {
       const predsData = await predsResponse.json();
       setPredictions(predsData || []);
     } catch (error) {
-      console.error('Error fetching user data:', error);
-      setError('Failed to load user data');
+      setError(error instanceof Error ? error.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
     }
