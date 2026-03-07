@@ -25,8 +25,8 @@ func (db *DB) CalculateLeaderboard(ctx context.Context) ([]models.LeaderboardEnt
 		}
 
 		winnerAccuracy, totalWinnersCorrect := calculateWinnerAccuracyAndTotalCorrectWinners(predictions)
-		totalScoreMse := calculateTotalScoreMse(predictions)
-		teamScoreMse := calculateTeamScoreMse(predictions)
+		totalScoreMse := calculateTotalScoreRmse(predictions)
+		teamScoreMse := calculateTeamScoreRmse(predictions)
 		leaderboardScore := getLeaderboardScore(predictions)
 
 		leaderboard = append(leaderboard, models.LeaderboardEntry{
@@ -63,8 +63,8 @@ func (db *DB) GetUserStats(ctx context.Context, userId string) (*models.Leaderbo
 	}
 
 	winnerAccuracy, totalWinnersCorrect := calculateWinnerAccuracyAndTotalCorrectWinners(predictions)
-	totalScoreError := calculateTotalScoreMse(predictions)
-	totalRunsError := calculateTeamScoreMse(predictions)
+	totalScoreError := calculateTotalScoreRmse(predictions)
+	totalRunsError := calculateTeamScoreRmse(predictions)
 
 	leaderboard, err := db.CalculateLeaderboard(ctx)
 	if err != nil {
@@ -106,7 +106,7 @@ func calculateWinnerAccuracyAndTotalCorrectWinners(predictions []models.Predicti
 	return winnerAccuracy, totalWinnersCorrect
 }
 
-func calculateTeamScoreMse(predictions []models.Prediction) float32 {
+func calculateTeamScoreRmse(predictions []models.Prediction) float32 {
 	var totalPredictions int
 	var sumSquaredErrors float32
 
@@ -124,7 +124,7 @@ func calculateTeamScoreMse(predictions []models.Prediction) float32 {
 	return float32(math.Sqrt(mse))
 }
 
-func calculateTotalScoreMse(predictions []models.Prediction) float32 {
+func calculateTotalScoreRmse(predictions []models.Prediction) float32 {
 	var totalPredictions int
 	var sumSquaredErrors float32
 
@@ -148,13 +148,21 @@ func getLeaderboardScore(predictions []models.Prediction) (leaderboardScore floa
 	totalScoreMseWeight := float32(0.2)
 
 	winnerAccuracy, _ := calculateWinnerAccuracyAndTotalCorrectWinners(predictions)
-	teamScoreRmse := calculateTeamScoreMse(predictions)
-	totalScoreRmse := calculateTotalScoreMse(predictions)
+	teamScoreRmse := calculateTeamScoreRmse(predictions)
+	totalScoreRmse := calculateTotalScoreRmse(predictions)
 
-	// Normalize RMSE to a 0-1 score using exponential decay.
-	// A lower RMSE yields a score closer to 1, higher RMSE closer to 0.
-	// The decay constant controls sensitivity — tune as needed.
-	teamScoreComponent := float32(math.Exp(float64(-teamScoreRmse) / 3.0))
+	// Decay constants are set to guesstimated RMSE ranges:
+	// teamScoreRmse expected range: 3-10 runs per team
+	//   RMSE=3  → score ≈ 0.55
+	//   RMSE=5  → score ≈ 0.37
+	//   RMSE=10 → score ≈ 0.14
+	// totalScoreRmse expected range: 1-6 total runs → decay constant 3.0
+	//   RMSE=1  → score ≈ 0.72
+	//   RMSE=3  → score ≈ 0.37
+	//   RMSE=6  → score ≈ 0.14
+	// teamScoreRmse has a higher decay constance becasue I expect team RMSE to be
+	// greater than totalScoreRmse. This is subject to change based on how actual models perform.
+	teamScoreComponent := float32(math.Exp(float64(-teamScoreRmse) / 5.0))
 	totalScoreComponent := float32(math.Exp(float64(-totalScoreRmse) / 3.0))
 
 	leaderboardScore = (winnerAccuracy * winnerAccuracyWeight) +
