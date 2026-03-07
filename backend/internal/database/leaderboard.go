@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"math"
 	"sort"
 
 	"github.com/bendemouth/mlb-prediction-pool/internal/models"
@@ -23,52 +24,29 @@ func (db *DB) CalculateLeaderboard(ctx context.Context) ([]models.LeaderboardEnt
 			return nil, fmt.Errorf("failed to get predictions for user %s: %w", user.Id, err)
 		}
 
-		totalWinnersCorrect, totalScoreError, totalRunsError, winnerAccuracy := calculateWinnersAndError(predictions)
+		winnerAccuracy, totalWinnersCorrect := calculateWinnerAccuracyAndTotalCorrectWinners(predictions)
+		totalScoreMse := calculateTotalScoreMse(predictions)
+		teamScoreMse := calculateTeamScoreMse(predictions)
+		leaderboardScore := getLeaderboardScore(predictions)
 
 		leaderboard = append(leaderboard, models.LeaderboardEntry{
 			UserId:              user.Id,
 			Username:            user.Username,
 			TotalWinnersCorrect: totalWinnersCorrect,
 			WinnerAccuracy:      winnerAccuracy,
-			TotalScoreError:     totalScoreError,
-			TotalRunsError:      totalRunsError,
+			TeamScoreMse:        totalScoreMse,
+			TotalRunsMse:        teamScoreMse,
+			LeaderboardScore:    leaderboardScore,
 			Rank:                0, // Rank will be assigned later
 		})
 	}
 
-	// Sort by the following criteria:
-	// 1. Winners correct
-	// 2. Total winners correct
-	// 3. Total score error (lower is better)
-	// 4. Total runs error (lower is better)
-	sort.Slice(leaderboard, func(i, j int) bool {
-		if leaderboard[i].WinnerAccuracy > leaderboard[j].WinnerAccuracy {
-			return leaderboard[i].WinnerAccuracy > leaderboard[j].WinnerAccuracy
-		}
-		if leaderboard[i].TotalWinnersCorrect != leaderboard[j].TotalWinnersCorrect {
-			return leaderboard[i].TotalWinnersCorrect > leaderboard[j].TotalWinnersCorrect
-		}
-		if leaderboard[i].TotalScoreError != leaderboard[j].TotalScoreError {
-			return leaderboard[i].TotalScoreError < leaderboard[j].TotalScoreError
-		}
-		return leaderboard[i].TotalRunsError < leaderboard[j].TotalRunsError
-	})
+	sortLeaderboardEntries(leaderboard)
 
-	// Assign ranks, handling ties
 	for i := range leaderboard {
-		if i == 0 {
-			leaderboard[i].Rank = 1
-		} else {
-			if leaderboard[i].WinnerAccuracy == leaderboard[i-1].WinnerAccuracy &&
-				leaderboard[i].TotalWinnersCorrect == leaderboard[i-1].TotalWinnersCorrect &&
-				leaderboard[i].TotalScoreError == leaderboard[i-1].TotalScoreError &&
-				leaderboard[i].TotalRunsError == leaderboard[i-1].TotalRunsError {
-				leaderboard[i].Rank = leaderboard[i-1].Rank
-			} else {
-				leaderboard[i].Rank = i + 1
-			}
-		}
+		leaderboard[i].Rank = i + 1
 	}
+
 	return leaderboard, nil
 }
 
@@ -84,7 +62,9 @@ func (db *DB) GetUserStats(ctx context.Context, userId string) (*models.Leaderbo
 		return nil, fmt.Errorf("failed to get user predictions: %w", err)
 	}
 
-	totalWinnersCorrect, totalScoreError, totalRunsError, winnerAccuracy := calculateWinnersAndError(predictions)
+	winnerAccuracy, totalWinnersCorrect := calculateWinnerAccuracyAndTotalCorrectWinners(predictions)
+	totalScoreError := calculateTotalScoreMse(predictions)
+	totalRunsError := calculateTeamScoreMse(predictions)
 
 	leaderboard, err := db.CalculateLeaderboard(ctx)
 	if err != nil {
@@ -104,30 +84,99 @@ func (db *DB) GetUserStats(ctx context.Context, userId string) (*models.Leaderbo
 		Username:            user.Username,
 		TotalWinnersCorrect: totalWinnersCorrect,
 		WinnerAccuracy:      winnerAccuracy,
-		TotalScoreError:     totalScoreError,
-		TotalRunsError:      totalRunsError,
+		TeamScoreMse:        totalScoreError,
+		TotalRunsMse:        totalRunsError,
 		Rank:                rank,
 	}, nil
 }
 
-func calculateWinnersAndError(predictions []models.Prediction) (totalWinnersCorrect int, totalScoreError float32, totalRunsError float32, winnerAccuracy float32) {
+func calculateWinnerAccuracyAndTotalCorrectWinners(predictions []models.Prediction) (winnerAccuracy float32, totalWinnersCorrect int) {
 	var totalPredictions int
-
 	for _, pred := range predictions {
 		if pred.WinnerCorrect != nil {
 			totalPredictions++
-
 			if *pred.WinnerCorrect {
 				totalWinnersCorrect++
 			}
-
-			totalScoreError += pred.HomeScoreError + pred.AwayScoreError
-			totalRunsError += pred.TotalScoreError
 		}
 	}
-
 	if totalPredictions > 0 {
 		winnerAccuracy = float32(totalWinnersCorrect) / float32(totalPredictions)
 	}
-	return totalWinnersCorrect, totalScoreError, totalRunsError, winnerAccuracy
+	return winnerAccuracy, totalWinnersCorrect
+}
+
+func calculateTeamScoreMse(predictions []models.Prediction) float32 {
+	var totalPredictions int
+	var sumSquaredErrors float32
+
+	for _, pred := range predictions {
+		if pred.WinnerCorrect == nil {
+			continue
+		}
+		sumSquaredErrors += (pred.HomeScoreError * pred.HomeScoreError) + (pred.AwayScoreError * pred.AwayScoreError)
+		totalPredictions++
+	}
+	if totalPredictions == 0 {
+		return 0
+	}
+	mse := float64(sumSquaredErrors / float32(2*totalPredictions))
+	return float32(math.Sqrt(mse))
+}
+
+func calculateTotalScoreMse(predictions []models.Prediction) float32 {
+	var totalPredictions int
+	var sumSquaredErrors float32
+
+	for _, pred := range predictions {
+		if pred.WinnerCorrect == nil {
+			continue
+		}
+		sumSquaredErrors += pred.TotalScoreError * pred.TotalScoreError
+		totalPredictions++
+	}
+	if totalPredictions == 0 {
+		return 0
+	}
+	mse := float64(sumSquaredErrors / float32(totalPredictions))
+	return float32(math.Sqrt(mse))
+}
+
+func getLeaderboardScore(predictions []models.Prediction) (leaderboardScore float32) {
+	winnerAccuracyWeight := float32(0.6)
+	teamScoreMseWeight := float32(0.2)
+	totalScoreMseWeight := float32(0.2)
+
+	winnerAccuracy, _ := calculateWinnerAccuracyAndTotalCorrectWinners(predictions)
+	teamScoreRmse := calculateTeamScoreMse(predictions)
+	totalScoreRmse := calculateTotalScoreMse(predictions)
+
+	// Normalize RMSE to a 0-1 score using exponential decay.
+	// A lower RMSE yields a score closer to 1, higher RMSE closer to 0.
+	// The decay constant controls sensitivity — tune as needed.
+	teamScoreComponent := float32(math.Exp(float64(-teamScoreRmse) / 3.0))
+	totalScoreComponent := float32(math.Exp(float64(-totalScoreRmse) / 3.0))
+
+	leaderboardScore = (winnerAccuracy * winnerAccuracyWeight) +
+		(teamScoreComponent * teamScoreMseWeight) +
+		(totalScoreComponent * totalScoreMseWeight)
+
+	return leaderboardScore
+}
+
+func sortLeaderboardEntries(entries []models.LeaderboardEntry) {
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].LeaderboardScore > entries[j].LeaderboardScore {
+			return true
+		}
+		if entries[i].LeaderboardScore == entries[j].LeaderboardScore {
+			if entries[i].TeamScoreMse < entries[j].TeamScoreMse {
+				return true
+			}
+			if entries[i].TeamScoreMse == entries[j].TeamScoreMse {
+				return entries[i].TotalRunsMse < entries[j].TotalRunsMse
+			}
+		}
+		return false
+	})
 }

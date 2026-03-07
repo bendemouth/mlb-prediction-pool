@@ -102,10 +102,13 @@ function Leaderboard() {
                   Winner Accuracy
                 </TableCell>
                 <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>
-                  Total Score Error
+                  Team Score RMSE
                 </TableCell>
                 <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>
-                  Total Runs Error
+                  Total Runs RMSE
+                </TableCell>
+                <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>
+                  Leaderboard Score
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -147,8 +150,9 @@ function Leaderboard() {
                       {(entry.winner_accuracy * 100).toFixed(1)}%
                     </Typography>
                   </TableCell>
-                  <TableCell align="right">{entry.total_score_error.toFixed(2)}</TableCell>
-                  <TableCell align="right">{entry.total_runs_error.toFixed(2)}</TableCell>
+                  <TableCell align="right">{entry.team_score_mse.toFixed(2)}</TableCell>
+                  <TableCell align="right">{entry.total_runs_mse.toFixed(2)}</TableCell>
+                  <TableCell align="right">{entry.leaderboard_score.toFixed(2)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -3,8 +3,8 @@ export interface LeaderboardEntry {
     username: string;
     total_winners_correct: number;
     winner_accuracy: number;
-    total_score_error: number;
-    total_runs_error: number;
+    team_score_mse: number;
+    total_runs_mse: number;
+    leaderboard_score: number;
     rank: number;
-    update_time: string;
 }

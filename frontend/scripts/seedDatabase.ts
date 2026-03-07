@@ -280,9 +280,10 @@ function scorePrediction(pred: SeedPrediction, game: SeedGame) {
   if (game.status !== 'completed' || game.winner === undefined) return pred;
 
   const winnerCorrect = pred.predictedWinnerId === game.winner;
-  const homeScoreError = Math.abs(pred.homeScorePredicted - game.homeScore);
-  const awayScoreError = Math.abs(pred.awayScorePredicted - game.awayScore);
-  const totalScoreError = Math.abs(pred.totalScorePredicted - (game.homeScore + game.awayScore));
+  // Store raw signed errors so the backend can square them for MSE
+  const homeScoreError = pred.homeScorePredicted - game.homeScore;
+  const awayScoreError = pred.awayScorePredicted - game.awayScore;
+  const totalScoreError = pred.totalScorePredicted - (game.homeScore + game.awayScore);
 
   return {
     ...pred,
