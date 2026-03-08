@@ -12,7 +12,7 @@ echo "DynamoDB is ready! Creating tables..."
 # Set fake AWS credentials
 export AWS_ACCESS_KEY_ID=fakeAccessKeyId
 export AWS_SECRET_ACCESS_KEY=fakeSecretAccessKey
-export AWS_DEFAULT_REGION=us-west-2
+export AWS_DEFAULT_REGION=us-east-1
 
 # Create Users Table
 aws dynamodb create-table \
@@ -21,7 +21,7 @@ aws dynamodb create-table \
     --key-schema AttributeName=userId,KeyType=HASH \
     --billing-mode PAY_PER_REQUEST \
     --endpoint-url http://dynamodb-local:8000 \
-    --region us-west-2 || echo "Users table already exists"
+    --region us-east-1 || echo "Users table already exists"
 
 # Create Games Table
 aws dynamodb create-table \
@@ -30,7 +30,7 @@ aws dynamodb create-table \
     --key-schema AttributeName=gameId,KeyType=HASH \
     --billing-mode PAY_PER_REQUEST \
     --endpoint-url http://dynamodb-local:8000 \
-    --region us-west-2 || echo "Games table already exists"
+    --region us-east-1 || echo "Games table already exists"
 
 # Create Predictions Table
 aws dynamodb create-table \
@@ -45,7 +45,7 @@ aws dynamodb create-table \
         "IndexName=GameIdIndex,KeySchema=[{AttributeName=gameId,KeyType=HASH}],Projection={ProjectionType=ALL}" \
     --billing-mode PAY_PER_REQUEST \
     --endpoint-url http://dynamodb-local:8000 \
-    --region us-west-2 || echo "Predictions table already exists"
+    --region us-east-1 || echo "Predictions table already exists"
 
 # Create Models Table
 aws dynamodb create-table \
@@ -54,6 +54,6 @@ aws dynamodb create-table \
     --key-schema AttributeName=modelId,KeyType=HASH \
     --billing-mode PAY_PER_REQUEST \
     --endpoint-url http://dynamodb-local:8000 \
-    --region us-west-2 || echo "Models table already exists"
+    --region us-east-1 || echo "Models table already exists"
 
 echo "Tables created successfully!"

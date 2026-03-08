@@ -28,7 +28,7 @@ services:
         while [ $$attempt -lt $$max_attempts ]; do
           attempt=$$((attempt + 1));
           echo "Attempt $$attempt/$$max_attempts...";
-          if aws dynamodb list-tables --endpoint-url http://dynamodb-local:8000 --region us-west-2 2>&1 | grep -q 'TableNames'; then
+          if aws dynamodb list-tables --endpoint-url http://dynamodb-local:8000 --region us-east-1 2>&1 | grep -q 'TableNames'; then
             echo 'DynamoDB is ready!';
             exit 0;
           fi;
