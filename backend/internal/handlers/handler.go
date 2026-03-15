@@ -12,13 +12,15 @@ import (
 type Handler struct {
 	db                 *database.DB
 	healthcheckService *services.HealthcheckService
+	S3Handler          *S3Handler
 }
 
 // Create new Handler
-func NewHandler(db *database.DB) *Handler {
+func NewHandler(db *database.DB, s3Client S3Handler) *Handler {
 	return &Handler{
 		db:                 db,
 		healthcheckService: services.NewHealthcheckService(db),
+		S3Handler:          &s3Client,
 	}
 }
 

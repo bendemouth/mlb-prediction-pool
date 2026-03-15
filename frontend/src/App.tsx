@@ -14,6 +14,8 @@ import SetupProfile from './pages/SetupProfile';
 import useAuth from './hooks/useAuth';
 import User from './models/user';
 import { toProfilePath } from './utils/profileRoute';
+import ManageModels from './pages/ManageModels';
+import UploadModel from './pages/UploadModel';
 
 // Define types that match your Go backend structs
 interface HealthStatus {
@@ -32,7 +34,6 @@ function App() {
   useEffect(() => {
     checkBackendHealth();
     fetchAuthSession()
-      .then(session => console.log('Auth session:', session))
       .catch(err => setError(`Failed to fetch auth session: ${err.message || err}`));
   }, []);
 
@@ -114,6 +115,7 @@ function App() {
     { label: 'Profile', to: profilePath },
     { label: 'Leaderboard', to: '/leaderboard' },
     { label: 'Predictions', to: '/predictions' },
+    { label: 'Manage Models', to: '/models'}
   ];
 
   return (
@@ -149,6 +151,8 @@ function App() {
           <Route path="/predictions" element={<ProtectedRoute><Predictions /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
           <Route path="/profile/:username" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+          <Route path="/models" element={<ProtectedRoute><ManageModels /></ProtectedRoute>} />
+          <Route path="/models/upload" element={<ProtectedRoute><UploadModel /></ProtectedRoute>} />
         </Routes>
       </Container>
     </Box>

@@ -1,5 +1,3 @@
-import { getDefaultHighWaterMark } from "node:stream";
-
 export interface User {
     id: string;
     username: string;

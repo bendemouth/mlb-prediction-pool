@@ -28,6 +28,7 @@ const defaultNavItems: NavItem[] = [
     { label: "Profile", to: "/profile" },
     { label: "Leaderboard", to: "/leaderboard" },
     { label: "Predictions", to: "/predictions" },
+    { label: "Manage Models", to: "/models"},
 ];
 
 export default function AppNavbar(props: AppNavbarProps) {

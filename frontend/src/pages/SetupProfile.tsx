@@ -41,7 +41,7 @@ function SetupProfile() {
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.error || "Failed to create profile");
+                setError(data.error || "Failed to create profile");
             }
 
             await checkAuth(); // Refresh auth state to update hasProfile
