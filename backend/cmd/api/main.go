@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/bendemouth/mlb-prediction-pool/internal/database"
 	"github.com/bendemouth/mlb-prediction-pool/internal/handlers"
 	"github.com/bendemouth/mlb-prediction-pool/internal/middleware"
@@ -62,11 +61,12 @@ func main() {
 	log.Println("Database connection established")
 
 	// Initialize S3 client
-	s3Options := s3.Options{
-		Region: os.Getenv("AWS_REGION"),
+	awsRegion := os.Getenv("AWS_REGION")
+	if awsRegion == "" {
+		awsRegion = "us-east-1"
 	}
 
-	s3Client, err := handlers.NewS3Client(ctx, s3Options)
+	s3Client, err := handlers.NewS3Client(ctx, awsRegion)
 	if err != nil {
 		log.Fatal("Failed to initialize S3 client:", err)
 	}
@@ -98,7 +98,7 @@ func main() {
 	// Model endpoints
 	protectedMux.HandleFunc("/models/submitModel", h.UploadModelHandler)
 	protectedMux.HandleFunc("/models", h.GetUserModelsHandler)
-	protectedMux.HandleFunc("/models/delete", h.DeleteModelHandler)
+	protectedMux.HandleFunc("/models/delete/", h.DeleteModelHandler)
 	protectedMux.HandleFunc("/models/", h.GetModelHandler)
 
 	protectedHandler := middleware.Auth(protectedMux)

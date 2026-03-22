@@ -10,3 +10,4 @@ lambda/data-ingestion/*
 !lambda/data-ingestion/handler.py
 !lambda/data-ingestion/requirements.txt
 !lambda/data-ingestion/lambda.zip
+sample-models/

@@ -37,17 +37,20 @@ func (db *DB) CreateModel(ctx context.Context, model *models.ModelMetadata) erro
 
 // GetModelsByUserId retrieves all models for a specific user
 func (db *DB) GetModelsByUserId(ctx context.Context, userId string) ([]*models.ModelMetadata, error) {
-	input := &dynamodb.QueryInput{
-		TableName:              aws.String(db.modelsTable),
-		KeyConditionExpression: aws.String("userId = :userId"),
+	input := &dynamodb.ScanInput{
+		TableName:        aws.String(db.modelsTable),
+		FilterExpression: aws.String("#userId = :userId"),
+		ExpressionAttributeNames: map[string]string{
+			"#userId": "userId",
+		},
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":userId": &types.AttributeValueMemberS{Value: userId},
 		},
 	}
 
-	result, err := db.client.Query(ctx, input)
+	result, err := db.client.Scan(ctx, input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query models from DynamoDB: %w", err)
+		return nil, fmt.Errorf("failed to scan models from DynamoDB: %w", err)
 	}
 
 	modelList := make([]*models.ModelMetadata, 0, len(result.Items))
@@ -68,7 +71,6 @@ func (db *DB) GetModelById(ctx context.Context, modelId string, userId string) (
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(db.modelsTable),
 		Key: map[string]types.AttributeValue{
-			"userId":  &types.AttributeValueMemberS{Value: userId},
 			"modelId": &types.AttributeValueMemberS{Value: modelId},
 		},
 	}
@@ -88,6 +90,10 @@ func (db *DB) GetModelById(ctx context.Context, modelId string, userId string) (
 		return nil, fmt.Errorf("failed to unmarshal model: %w", err)
 	}
 
+	if model.UserId != userId {
+		return nil, fmt.Errorf("model not found")
+	}
+
 	return &model, nil
 }
 
@@ -96,8 +102,14 @@ func (db *DB) DeleteModel(ctx context.Context, modelId string, userId string) er
 	input := &dynamodb.DeleteItemInput{
 		TableName: aws.String(db.modelsTable),
 		Key: map[string]types.AttributeValue{
-			"userId":  &types.AttributeValueMemberS{Value: userId},
 			"modelId": &types.AttributeValueMemberS{Value: modelId},
+		},
+		ConditionExpression: aws.String("#userId = :userId"),
+		ExpressionAttributeNames: map[string]string{
+			"#userId": "userId",
+		},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":userId": &types.AttributeValueMemberS{Value: userId},
 		},
 	}
 
@@ -114,14 +126,16 @@ func (db *DB) UpdateModelStatus(ctx context.Context, modelId string, userId stri
 	input := &dynamodb.UpdateItemInput{
 		TableName: aws.String(db.modelsTable),
 		Key: map[string]types.AttributeValue{
-			"userId":  &types.AttributeValueMemberS{Value: userId},
 			"modelId": &types.AttributeValueMemberS{Value: modelId},
 		},
 		UpdateExpression: aws.String("SET #status = :status, updatedAt = :updatedAt"),
+		ConditionExpression: aws.String("#userId = :userId"),
 		ExpressionAttributeNames: map[string]string{
 			"#status": "status",
+			"#userId": "userId",
 		},
 		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":userId":    &types.AttributeValueMemberS{Value: userId},
 			":status":    &types.AttributeValueMemberS{Value: status},
 			":updatedAt": &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", time.Now().UnixMilli())},
 		},
