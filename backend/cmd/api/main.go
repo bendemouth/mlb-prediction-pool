@@ -95,6 +95,9 @@ func main() {
 	protectedMux.HandleFunc("/users/listUsers", h.HandleListUsers)
 	protectedMux.HandleFunc("/users/stats", h.HandleGetUserStats)
 
+	// Games endpoints
+	protectedMux.HandleFunc("/games/upcoming", h.GetUpcomingGamesSummary)
+
 	// Model endpoints
 	protectedMux.HandleFunc("/models/submitModel", h.UploadModelHandler)
 	protectedMux.HandleFunc("/models", h.GetUserModelsHandler)
