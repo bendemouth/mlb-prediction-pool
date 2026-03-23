@@ -20,17 +20,20 @@ jobs:
       - name: Prepare app directory
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST}}
+          host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
+          request_pty: true
           script: |
-            sudo mkdir -p ${{ env.APP_DIR }}
-            sudo chown ec2-user:ec2-user ${{ env.APP_DIR }}
+            if [ ! -d "${{ env.APP_DIR }}" ]; then
+              sudo mkdir -p ${{ env.APP_DIR }}
+              sudo chown ec2-user:ec2-user ${{ env.APP_DIR }}
+            fi
       
       - name: Update source code
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST}}
+          host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
@@ -69,7 +72,6 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          command_timeout: 20m
           script: |
             cd ${{ env.APP_DIR }}
             export REACT_APP_COGNITO_USER_POOL_ID="${{ secrets.DEV_COGNITO_USER_POOL_ID }}"
