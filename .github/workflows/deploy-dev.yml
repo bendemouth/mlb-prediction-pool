@@ -74,7 +74,7 @@ jobs:
             cd ${{ env.APP_DIR }}
             export REACT_APP_COGNITO_USER_POOL_ID="${{ secrets.DEV_COGNITO_USER_POOL_ID }}"
             export REACT_APP_COGNITO_APP_CLIENT_ID="${{ secrets.DEV_COGNITO_APP_CLIENT_ID }}"
-            docker compose -f docker-compose.dev-deploy.yml build --no-cache
+            docker compose -f docker-compose.dev-deploy.yml build 
 
       - name: Start container
         uses: appleboy/ssh-action@v1.0.3
