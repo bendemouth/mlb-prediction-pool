@@ -1,7 +1,7 @@
 version: '3.8'
 
-# Single combined container: nginx serves the React frontend and proxies
-# /api/ to the Go backend, both running inside the same container.
+# Dev deployment: same combined container as prod but runs on port 8081
+# so both environments can coexist on the same EC2 instance.
 services:
   app:
     build:
@@ -12,9 +12,9 @@ services:
         REACT_APP_API_URL: /api
         REACT_APP_COGNITO_USER_POOL_ID: ${REACT_APP_COGNITO_USER_POOL_ID}
         REACT_APP_COGNITO_APP_CLIENT_ID: ${REACT_APP_COGNITO_APP_CLIENT_ID}
-    container_name: mlb-pool-prod
+    container_name: mlb-pool-dev
     ports:
-      - "80:80"
+      - "8081:80"
     env_file:
-      - .env.prod
+      - .env.dev-deploy
     restart: always

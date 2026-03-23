@@ -1,0 +1,53 @@
+name: Deploy — Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Build & deploy to EC2 (prod)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── Write .env.prod to EC2, git pull, rebuild, restart ──────────────────
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          # Timeout for the overall SSH session (build can take several minutes)
+          command_timeout: 20m
+          script: |
+            set -e
+
+            APP_DIR=/opt/app
+
+            # ── Clone repo on first deploy ───────────────────────────────
+            if [ ! -d "$APP_DIR/.git" ]; then
+              git clone https://github.com/${{ github.repository }} "$APP_DIR"
+            fi
+
+            # ── Pull latest code ─────────────────────────────────────────
+            git -C "$APP_DIR" fetch origin
+            git -C "$APP_DIR" checkout main
+            git -C "$APP_DIR" pull origin main
+
+            # ── Write runtime env file from GitHub secret ─────────────────
+            # The secret should contain the full .env.prod contents.
+            printf '%s' '${{ secrets.PROD_ENV }}' > "$APP_DIR/.env.prod"
+
+            # ── Build and (re)start the combined container ────────────────
+            cd "$APP_DIR"
+            docker compose -f docker-compose.prod.yml build --no-cache \
+              --build-arg REACT_APP_COGNITO_USER_POOL_ID="${{ secrets.PROD_COGNITO_USER_POOL_ID }}" \
+              --build-arg REACT_APP_COGNITO_APP_CLIENT_ID="${{ secrets.PROD_COGNITO_APP_CLIENT_ID }}"
+            docker compose -f docker-compose.prod.yml up -d
+
+            # ── Clean up dangling images to reclaim disk ──────────────────
+            docker image prune -f

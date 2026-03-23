@@ -27,6 +27,14 @@ resource "aws_security_group" "app_server" {
         cidr_blocks = ["0.0.0.0/0"]
     }
 
+    ingress {
+        description = "Dev app (port 8081)"
+        from_port   = 8081
+        to_port     = 8081
+        protocol    = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+
     egress {
         from_port   = 0
         to_port     = 0
@@ -79,9 +87,9 @@ resource "aws_instance" "app_server" {
         #!/bin/bash
         set -e
 
-        # Install Docker
+        # Install Docker and git
         dnf update -y
-        dnf install -y docker
+        dnf install -y docker git
         systemctl enable docker
         systemctl start docker
         usermod -aG docker ec2-user
