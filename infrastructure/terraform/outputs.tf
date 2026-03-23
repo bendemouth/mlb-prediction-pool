@@ -32,3 +32,12 @@ output "cognito" {
     region           = var.aws_region
   }
 }
+
+output "ec2" {
+    description = "EC2 application server details"
+    value = {
+        public_ip        = aws_eip.app_server.public_ip
+        instance_id      = aws_instance.app_server.id
+        ssh_command      = "ssh -i <your-private-key> ec2-user@${aws_eip.app_server.public_ip}"
+    }
+}

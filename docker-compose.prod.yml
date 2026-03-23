@@ -20,11 +20,15 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: production
+      args:
+        # React env vars are baked into the JS bundle at build time.
+        # Set these in .env.prod or pass them on the docker compose build command line.
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-/api}
+        REACT_APP_COGNITO_USER_POOL_ID: ${REACT_APP_COGNITO_USER_POOL_ID}
+        REACT_APP_COGNITO_APP_CLIENT_ID: ${REACT_APP_COGNITO_APP_CLIENT_ID}
     container_name: mlb-pool-frontend-prod
     ports:
       - "80:80"
-    env_file:
-      - .env.prod
     depends_on:
       - backend
     networks:

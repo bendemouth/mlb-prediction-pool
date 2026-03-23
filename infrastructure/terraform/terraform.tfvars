@@ -1,0 +1,1 @@
+ec2_key_public_key="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHW5HTzGJ+SrvvRBXkK4WKRQfAr44MD5ygZgDh2qgQYo mlb-prediction-pool-deployer"

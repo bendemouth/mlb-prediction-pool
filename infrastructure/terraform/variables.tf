@@ -21,3 +21,14 @@ variable "mlb_api_base" {
     type = string
     default = "https://statsapi.mlb.com/api/v1"
 }
+
+variable "ec2_key_public_key" {
+    description = "SSH public key material for the EC2 deployer key pair (e.g. contents of ~/.ssh/id_rsa.pub)"
+    type        = string
+}
+
+variable "ec2_instance_type" {
+    description = "EC2 instance type for the application server"
+    type        = string
+    default     = "t3a.micro"
+}
